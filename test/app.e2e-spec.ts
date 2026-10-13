@@ -3,14 +3,25 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { PrismaService } from '../src/common/database/prisma.service.js';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
+  const database = {
+    onModuleInit: vi.fn(),
+    onModuleDestroy: vi.fn(),
+    $queryRaw: vi.fn(),
+  };
 
   beforeEach(async () => {
+    database.$queryRaw.mockReset();
+    database.$queryRaw.mockResolvedValue([{ connected: 1 }]);
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(PrismaService)
+      .useValue(database)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -21,6 +32,26 @@ describe('AppController (e2e)', () => {
       .get('/')
       .expect(200)
       .expect('Hello World!');
+  });
+
+  it('reports readiness when the database responds', () => {
+    return request(app.getHttpServer())
+      .get('/health/ready')
+      .expect(200)
+      .expect({ status: 'ok', database: 'connected' });
+  });
+
+  it('returns 503 without leaking database errors when the database fails', async () => {
+    database.$queryRaw.mockRejectedValueOnce(
+      new Error('connection failed: private-database-password'),
+    );
+
+    const response = await request(app.getHttpServer())
+      .get('/health/ready')
+      .expect(503);
+
+    expect(response.body.message).toBe('Database unavailable');
+    expect(response.text).not.toContain('private-database-password');
   });
 
   afterEach(async () => {

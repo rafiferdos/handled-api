@@ -7,19 +7,24 @@
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start": "prisma generate && nest start",
+    "start:dev": "prisma generate && nest start --watch",
+    "start:debug": "prisma generate && nest start --debug --watch",
+    "start:prod": "node dist/main.js",
     "lint": "oxlint --type-aware src/ test/",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:cov": "vitest run --coverage",
-    "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test": "prisma generate && vitest run",
+    "test:watch": "prisma generate && vitest",
+    "test:cov": "prisma generate && vitest run --coverage",
+    "test:debug": "prisma generate && vitest --inspect-brk --no-file-parallelism",
+    "test:e2e": "prisma generate && vitest run --config ./vitest.config.e2e.ts",
+    "typecheck": "prisma generate && tsc --noEmit --incremental false",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate": "prisma migrate deploy",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",
@@ -67,5 +72,10 @@
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vitest": "^4.1.2"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.13.0 <23",
+    "pnpm": "11.25.0"
   }
 }

@@ -1,124 +1,98 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Handled API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS backend for Handled support operations, using Supabase PostgreSQL and Prisma 7.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Local setup
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+Requires Git and nvm. The repository selects Node 22; pnpm 11 requires Node 22.13 or later.
 
 ```bash
-$ pnpm install
+git clone https://github.com/rafiferdos/handled-api.git
+cd handled-api
+nvm install
+nvm use
+npm install -g pnpm@11.25.0
+pnpm install --frozen-lockfile
+cp .env.example .env
 ```
 
-## Compile and run the project
+Ask the team lead for the development connection settings and fill `.env`. Keep real credentials in your local `.env` and deployment secrets; never commit them or put database credentials in frontend environment variables.
+
+- `DATABASE_URL`: application connection. For this persistent NestJS development server, use the Supabase **Session pooler** URI from **Connect**, port 5432.
+- `DIRECT_URL`: migration connection. Use the same Session pooler host and credentials for development, or a reachable direct connection. An empty value falls back to `DATABASE_URL`.
+- `DATABASE_POOL_MAX`: maximum connections per application instance; starts at 5.
+- `DATABASE_CONNECT_TIMEOUT_MS`: connection timeout; starts at 10000.
+- `SUPABASE_URL`, `SUPABASE_JWT_ISSUER`, `SUPABASE_JWKS_URL`: project and Auth endpoints for the AuthModule implementation. This database setup does not implement JWT authorization.
+
+Keep TLS certificate verification enabled on remote database connections. The public Supabase CA certificate is included at `prisma/certs/supabase-ca.crt`. For this development database:
+
+- Runtime `DATABASE_URL` uses `sslmode=verify-full&sslrootcert=prisma/certs/supabase-ca.crt`.
+- Migration `DIRECT_URL` uses `sslmode=require&sslaccept=strict&sslcert=prisma/certs/supabase-ca.crt`.
+
+These certificate paths are relative to the repository root. Copy the matching settings from the team lead's development configuration. Local PostgreSQL may use different TLS settings.
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm db:validate
+pnpm typecheck
+pnpm build
+pnpm start:dev
 ```
 
-## Run tests
+The application loads `.env` automatically. Build, typecheck, start and test commands generate Prisma Client automatically.
+
+- API: http://localhost:4000/api/v1
+- Swagger: http://localhost:4000/docs (development only)
+- Liveness: http://localhost:4000/api/v1/health
+- Database readiness: http://localhost:4000/api/v1/health/ready
+
+## Database structure and migrations
+
+`prisma.config.ts` is detected automatically. It loads the entire `prisma/` directory, including the feature-owned files in `prisma/models/`. Add ERD models to those files. The generated client lives in `src/generated/prisma/` and stays out of Git.
+
+The initial scaffold has no business models or committed migrations. The provisioned development database is ready for those models; this setup does not invent application tables.
+
+The team lead creates and reviews migrations against a disposable local development database using `pnpm exec prisma migrate dev --name <change>`, then commits the migration files. To apply already committed migrations to the shared development database:
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm db:migrate
+pnpm db:generate
 ```
 
-## Deployment
+Do not run reset or schema-changing development commands against the shared database. Supabase Auth's managed `auth` schema stays outside Prisma's application schema.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Supabase Data API is disabled for the provisioned project because the NestJS backend uses Prisma. Automatic RLS is enabled for future public tables. Feature modules still need workspace/tenant authorization in the backend.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Shared database access
+
+Inject `PrismaService` from `src/common/database/prisma.service.ts` into feature services. `DatabaseModule` exports one shared client with a bounded connection pool. It connects on application startup and disconnects during shutdown. `/health/ready` runs a real database query and returns 503 without exposing connection errors if the query fails.
+
+## Updating an existing checkout
+
+Start from a clean checkout; commit or stash your own work before switching branches.
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+git switch main
+git pull --ff-only origin main
+nvm use
+pnpm install --frozen-lockfile
+pnpm start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Keep your existing `.env`; update it only when new environment settings are required. Feature work should use a branch such as `feat/SCRUM-13-investigation-api` and merge through a pull request.
 
-## Observability
-
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
+## Verification
 
 ```bash
-$ pnpm install @nestjs/observe
+pnpm typecheck
+pnpm build
+pnpm test
+pnpm test:e2e
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+E2E tests replace PrismaService and use isolated test settings; they do not connect to the shared database. Check `/api/v1/health/ready` to verify the live configured database.
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+## Production
 
-## Resources
+Use a separate production Supabase project and deployment environment variables. Set `NODE_ENV=production`, apply reviewed migrations with `pnpm db:migrate`, build with development dependencies present, then run `pnpm start:prod`.
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Reference: [Supabase Prisma guide](https://supabase.com/docs/guides/database/prisma), [Prisma 7 upgrade guide](https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7), [Nest configuration](https://docs.nestjs.com/techniques/configuration).

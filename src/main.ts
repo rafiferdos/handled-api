@@ -1,19 +1,21 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   app.enableShutdownHooks();
   app.use(helmet());
   app.setGlobalPrefix('api/v1');
 
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS ?? 'http://localhost:3000')
+    origin: configService
+      .getOrThrow<string>('CORS_ORIGINS')
       .split(',')
       .map((origin) => origin.trim()),
   });
@@ -29,7 +31,7 @@ async function bootstrap() {
     }),
   );
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (configService.getOrThrow<string>('NODE_ENV') !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Handled API')
       .setDescription('AI-powered support operations')
@@ -41,7 +43,7 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document);
   }
 
-  await app.listen(Number(process.env.PORT ?? 4000));
+  await app.listen(configService.getOrThrow<number>('PORT'));
 }
 
 void bootstrap();
