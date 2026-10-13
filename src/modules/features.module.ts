@@ -17,6 +17,23 @@ import { EvaluationModule } from './evaluation/evaluation.module.js';
 import { HealthModule } from './health/health.module.js';
 
 @Module({
-  imports: [AuthModule, WorkspaceModule, CustomerModule, BillingModule, TicketModule, KnowledgeModule, AiModule, InvestigationModule, ProposalModule, ActionModule, QueueModule, EventsModule, AuditModule, AnalyticsModule, EvaluationModule, HealthModule]
+  imports: [
+    AuthModule,
+    WorkspaceModule,
+    CustomerModule,
+    BillingModule,
+    TicketModule,
+    KnowledgeModule,
+    AiModule,
+    InvestigationModule,
+    ProposalModule,
+    ActionModule,
+    QueueModule,
+    EventsModule,
+    AuditModule,
+    AnalyticsModule,
+    EvaluationModule,
+    HealthModule,
+  ],
 })
-export class Module {}
+export class FeaturesModule {}
