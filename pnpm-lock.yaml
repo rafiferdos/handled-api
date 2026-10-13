@@ -53,9 +53,6 @@ importers:
       class-validator:
         specifier: ^0.15.1
         version: 0.15.1
-      dotenv:
-        specifier: ^18.0.7
-        version: 18.0.7
       helmet:
         specifier: ^8.3.0
         version: 8.3.0
@@ -111,6 +108,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.2
         version: 4.1.11(vitest@4.1.11)
+      dotenv:
+        specifier: ^18.0.7
+        version: 18.0.7
       oxlint:
         specifier: ^1.58.0
         version: 1.87.0(oxlint-tsgolint@7.0.2004)
