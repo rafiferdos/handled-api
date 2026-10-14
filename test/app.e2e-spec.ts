@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
 import { PrismaService } from '../src/common/database/prisma.service.js';
+import { configureApp } from '../src/config/configure-app.js';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -24,19 +25,20 @@ describe('AppController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/api/v1 (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/api/v1')
       .expect(200)
       .expect('Hello World!');
   });
 
   it('reports readiness when the database responds', () => {
     return request(app.getHttpServer())
-      .get('/health/ready')
+      .get('/ready')
       .expect(200)
       .expect({ status: 'ok', database: 'connected' });
   });
@@ -47,7 +49,7 @@ describe('AppController (e2e)', () => {
     );
 
     const response = await request(app.getHttpServer())
-      .get('/health/ready')
+      .get('/ready')
       .expect(503);
 
     expect(response.body.message).toBe('Database unavailable');
