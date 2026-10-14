@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ConsoleLogger } from '@nestjs/common';
+import { ConsoleLogger, Logger } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module.js';
@@ -11,8 +11,20 @@ async function bootstrap() {
   });
   const configService = app.get(ConfigService);
 
-  configureApp(app);
-  await app.listen(configService.getOrThrow<number>('PORT'));
+  try {
+    configureApp(app);
+    await app.listen(configService.getOrThrow<number>('PORT'));
+  } catch (error) {
+    await app.close();
+    throw error;
+  }
 }
 
-void bootstrap();
+void bootstrap().catch(() => {
+  // Startup/driver errors can contain credentials; keep the process log safe.
+  new Logger('Bootstrap').error({
+    event: 'application.start.failed',
+    errorCode: 'INTERNAL_ERROR',
+  });
+  process.exitCode = 1;
+});
