@@ -1,0 +1,4 @@
+// Owner slot: Team Lead. Planned models: InvestigationRun, InvestigationStep, Proposal, ProposalSource, ProposalDecision.
+// Starter: no business models implemented. Add schema through an owner-reviewed PR.
+// Every tenant model needs workspaceId and same-workspace constraints.
+// Coordinate cross-domain relations and migrations; see docs/ownership.md.

@@ -1,0 +1,4 @@
+// Owner slot: Person B. Planned models: Ticket, TicketMessage.
+// Starter: no business models implemented. Add schema through an owner-reviewed PR.
+// Every tenant model needs workspaceId and same-workspace constraints.
+// Coordinate cross-domain relations and migrations; see docs/ownership.md.
