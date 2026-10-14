@@ -52,7 +52,7 @@ describe('AppController (e2e)', () => {
       .get('/ready')
       .expect(503);
 
-    expect(response.body.message).toBe('Database unavailable');
+    expect(response.body.error.code).toBe('DEPENDENCY_UNAVAILABLE');
     expect(response.text).not.toContain('private-database-password');
   });
 
