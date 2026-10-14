@@ -4,7 +4,10 @@ import { AppException } from '../errors/app.exception.js';
 import { ErrorCode } from '../errors/error-codes.js';
 import type { ErrorDetails } from '../errors/app.exception.js';
 
-function validationDetails(errors: ValidationError[], parent = ''): NonNullable<ErrorDetails> {
+function validationDetails(
+  errors: ValidationError[],
+  parent = '',
+): NonNullable<ErrorDetails> {
   const messages: Record<string, string> = {
     whitelistValidation: 'Unknown field',
     isInt: 'Must be an integer',
@@ -22,7 +25,14 @@ function validationDetails(errors: ValidationError[], parent = ''): NonNullable<
     const field = parent ? `${parent}.${error.property}` : error.property;
     return [
       ...(error.constraints
-        ? [{ field, messages: Object.keys(error.constraints).map((key) => messages[key] ?? 'Invalid value') }]
+        ? [
+            {
+              field,
+              messages: Object.keys(error.constraints).map(
+                (key) => messages[key] ?? 'Invalid value',
+              ),
+            },
+          ]
         : []),
       ...validationDetails(error.children ?? [], field),
     ];
@@ -37,6 +47,7 @@ export function createValidationPipe(): ValidationPipe {
     forbidUnknownValues: true,
     transformOptions: { enableImplicitConversion: false },
     validationError: { target: false, value: false },
-    exceptionFactory: (errors) => new AppException(ErrorCode.VALIDATION_ERROR, validationDetails(errors)),
+    exceptionFactory: (errors) =>
+      new AppException(ErrorCode.VALIDATION_ERROR, validationDetails(errors)),
   });
 }

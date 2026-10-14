@@ -3,7 +3,9 @@ import { IsInt, Max, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 function queryInteger(value: unknown): unknown {
-  return typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+  return typeof value === 'string' && /^\d+$/.test(value)
+    ? Number(value)
+    : value;
 }
 
 export class PaginationQueryDto {

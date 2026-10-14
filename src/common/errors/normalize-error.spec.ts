@@ -41,6 +41,8 @@ describe('normalizeError', () => {
           { field: 'page', messages: ['page must be an integer number'] },
         ]),
       ).details,
-    ).toEqual([{ field: 'page', messages: ['page must be an integer number'] }]);
+    ).toEqual([
+      { field: 'page', messages: ['page must be an integer number'] },
+    ]);
   });
 });

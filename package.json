@@ -1,7 +1,7 @@
 {
   "name": "handled-api",
   "version": "0.0.1",
-  "description": "",
+  "description": "Handled modular NestJS API team starter",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -9,7 +9,8 @@
   "scripts": {
     "build": "prisma generate && nest build",
     "deploy": "nest deploy",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "start": "prisma generate && nest start",
     "start:dev": "prisma generate && nest start --watch",
     "start:debug": "prisma generate && nest start --debug --watch",
@@ -21,9 +22,11 @@
     "test:debug": "prisma generate && vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "prisma generate && vitest run --config ./vitest.config.e2e.ts",
     "typecheck": "prisma generate && tsc --noEmit --incremental false",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
     "db:migrate": "prisma migrate deploy",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio"
   },
   "dependencies": {

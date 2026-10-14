@@ -4,7 +4,9 @@ import { DenyAccessContextResolver } from './deny-access-context.resolver.js';
 
 @Global()
 @Module({
-  providers: [{ provide: AccessContextResolver, useClass: DenyAccessContextResolver }],
+  providers: [
+    { provide: AccessContextResolver, useClass: DenyAccessContextResolver },
+  ],
   exports: [AccessContextResolver],
 })
 export class AuthModule {}

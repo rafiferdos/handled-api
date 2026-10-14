@@ -16,7 +16,11 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('reports the starter API identity', () => {
-      expect(appController.getInfo()).toEqual({ name: 'Handled API', apiVersion: 'v1', status: 'starter' });
+      expect(appController.getInfo()).toEqual({
+        name: 'Handled API',
+        apiVersion: 'v1',
+        status: 'starter',
+      });
     });
   });
 });

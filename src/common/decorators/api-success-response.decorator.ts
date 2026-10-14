@@ -14,7 +14,9 @@ export function ApiSuccessResponse(
       description: options.description ?? 'Successful response',
       schema: {
         type: 'object',
-        required: options.paginated ? ['data', 'meta', 'requestId'] : ['data', 'requestId'],
+        required: options.paginated
+          ? ['data', 'meta', 'requestId']
+          : ['data', 'requestId'],
         properties: {
           data: options.paginated ? { type: 'array', items: data } : data,
           requestId: { type: 'string', example: 'req_example' },

@@ -24,8 +24,14 @@ export const ERROR_CATALOG = {
   UNAUTHENTICATED: { status: 401, message: 'Authentication required' },
   FORBIDDEN: { status: 403, message: 'Permission denied' },
   RESOURCE_NOT_FOUND: { status: 404, message: 'Resource not found' },
-  INVALID_STATE_TRANSITION: { status: 409, message: 'Invalid state transition' },
-  PROPOSAL_VERSION_CONFLICT: { status: 409, message: 'Proposal version changed' },
+  INVALID_STATE_TRANSITION: {
+    status: 409,
+    message: 'Invalid state transition',
+  },
+  PROPOSAL_VERSION_CONFLICT: {
+    status: 409,
+    message: 'Proposal version changed',
+  },
   IDEMPOTENCY_CONFLICT: { status: 409, message: 'Idempotency key conflict' },
   DUPLICATE_RESOURCE: { status: 409, message: 'Resource already exists' },
   BUSINESS_RULE_FAILED: { status: 422, message: 'Business rule failed' },

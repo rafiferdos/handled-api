@@ -33,7 +33,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
     if (!response.headersSent) {
       response.status(error.status).json({
-        error: { code: error.code, message: error.message, details: error.details },
+        error: {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+        },
         requestId,
         timestamp: new Date().toISOString(),
       });

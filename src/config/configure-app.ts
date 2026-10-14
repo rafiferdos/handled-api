@@ -28,7 +28,13 @@ export function configureApp(app: NestExpressApplication): void {
       .split(',')
       .map((origin) => origin.trim()),
     exposedHeaders: ['X-Request-Id'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'Idempotency-Key', 'X-Support-Form-Token'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Request-Id',
+      'Idempotency-Key',
+      'X-Support-Form-Token',
+    ],
   });
   app.useGlobalPipes(createValidationPipe());
 

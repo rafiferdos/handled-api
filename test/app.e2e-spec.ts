@@ -33,7 +33,11 @@ describe('AppController (e2e)', () => {
       .get('/api/v1')
       .expect(200)
       .expect((response) => {
-        expect(response.body.data).toEqual({ name: 'Handled API', apiVersion: 'v1', status: 'starter' });
+        expect(response.body.data).toEqual({
+          name: 'Handled API',
+          apiVersion: 'v1',
+          status: 'starter',
+        });
         expect(response.body.requestId).toBe(response.headers['x-request-id']);
       });
   });

@@ -11,7 +11,10 @@ export interface NormalizedError {
   details: ErrorDetails;
 }
 
-function result(code: ErrorCode, details: ErrorDetails = null): NormalizedError {
+function result(
+  code: ErrorCode,
+  details: ErrorDetails = null,
+): NormalizedError {
   return { ...ERROR_CATALOG[code], code, details };
 }
 

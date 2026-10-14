@@ -15,10 +15,12 @@ import { RequestContextMiddleware } from './middleware/request-context.middlewar
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        throttlers: [{
-          ttl: config.getOrThrow<number>('THROTTLE_TTL_MS'),
-          limit: config.getOrThrow<number>('THROTTLE_LIMIT'),
-        }],
+        throttlers: [
+          {
+            ttl: config.getOrThrow<number>('THROTTLE_TTL_MS'),
+            limit: config.getOrThrow<number>('THROTTLE_LIMIT'),
+          },
+        ],
       }),
     }),
   ],

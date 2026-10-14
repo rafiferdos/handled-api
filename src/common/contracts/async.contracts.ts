@@ -45,7 +45,9 @@ export const SupportEvent = {
 } as const;
 
 // Thin notifications only: clients refetch authorized REST state on reconnect.
-export interface SupportEventPayload<TStatus extends string = string> extends JobContext {
+export interface SupportEventPayload<
+  TStatus extends string = string,
+> extends JobContext {
   resourceId: string;
   status: TStatus;
   changedAt: string;

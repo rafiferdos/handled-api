@@ -3,7 +3,10 @@ import { AppException } from '../errors/app.exception.js';
 import { ErrorCode } from '../errors/error-codes.js';
 import { PaginatedResult } from '../http/api-response.js';
 
-export function paginationBounds(query: PaginationQueryDto): { skip: number; take: number } {
+export function paginationBounds(query: PaginationQueryDto): {
+  skip: number;
+  take: number;
+} {
   const skip = (query.page - 1) * query.limit;
   if (!Number.isSafeInteger(skip)) {
     throw new AppException(ErrorCode.VALIDATION_ERROR, [
