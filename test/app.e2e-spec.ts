@@ -33,7 +33,10 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/api/v1')
       .expect(200)
-      .expect('Hello World!');
+      .expect((response) => {
+        expect(response.body.data).toBe('Hello World!');
+        expect(response.body.requestId).toBe(response.headers['x-request-id']);
+      });
   });
 
   it('reports readiness when the database responds', () => {
