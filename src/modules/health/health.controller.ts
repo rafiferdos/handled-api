@@ -2,9 +2,11 @@ import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../../common/database/prisma.service.js';
 import { RawResponse } from '../../common/decorators/raw-response.decorator.js';
+import { Public } from '../../common/decorators/access.decorator.js';
 
 @ApiTags('Health')
 @RawResponse()
+@Public()
 @Controller()
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
