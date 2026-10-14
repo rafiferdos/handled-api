@@ -1,10 +1,14 @@
 # Handled API
 
-NestJS backend for Handled support operations, using Supabase PostgreSQL and Prisma 7.
+Team starter for Handled's modular NestJS REST backend: PostgreSQL/Supabase, Prisma 7 and strict TypeScript. Product flow: Ticket → scoped investigation and KB evidence → human decision → simulated action → audit.
 
-## Local setup
+**Starter status:** HTTP infrastructure, database connection/readiness and feature module boundaries are implemented. Business models/migrations/seeds, real JWT verification, membership persistence, ticket/KB/AI/action/queue/realtime features and deployment remain owner tasks. The shipped API has only application information and probes. Private routes deny access until the auth resolver is implemented.
 
-Requires Git and nvm. The repository selects Node 22; pnpm 11 requires Node 22.13 or later.
+Read [contributing](CONTRIBUTING.md), [ownership](docs/ownership.md), [feature development](docs/feature-development.md), [configuration](docs/configuration.md) and the [14 October Notion source register](docs/planning-sources.md).
+
+## First checkout
+
+Requires Git and nvm. The existing runtime is Node 22 (>=22.13); pnpm is pinned to 11.25.0. The current plan permits compatible Node 22; Node 24 adoption belongs in a separate verified runtime change.
 
 ```bash
 git clone https://github.com/rafiferdos/handled-api.git
@@ -16,83 +20,97 @@ pnpm install --frozen-lockfile
 cp .env.example .env
 ```
 
-Ask the team lead for the development connection settings and fill `.env`. Keep real credentials in your local `.env` and deployment secrets; never commit them or put database credentials in frontend environment variables.
-
-- `DATABASE_URL`: application connection. For this persistent NestJS development server, use the Supabase **Session pooler** URI from **Connect**, port 5432.
-- `DIRECT_URL`: migration connection. Use the same Session pooler host and credentials for development, or a reachable direct connection. An empty value falls back to `DATABASE_URL`.
-- `DATABASE_POOL_MAX`: maximum connections per application instance; starts at 5.
-- `DATABASE_CONNECT_TIMEOUT_MS`: connection timeout; starts at 10000.
-- `SUPABASE_URL`, `SUPABASE_JWT_ISSUER`, `SUPABASE_JWKS_URL`: project and Auth endpoints for the AuthModule implementation. This database setup does not implement JWT authorization.
-
-Keep TLS certificate verification enabled on remote database connections. The public Supabase CA certificate is included at `prisma/certs/supabase-ca.crt`. For this development database:
-
-- Runtime `DATABASE_URL` uses `sslmode=verify-full&sslrootcert=prisma/certs/supabase-ca.crt`.
-- Migration `DIRECT_URL` uses `sslmode=require&sslaccept=strict&sslcert=prisma/certs/supabase-ca.crt`.
-
-These certificate paths are relative to the repository root. Copy the matching settings from the team lead's development configuration. Local PostgreSQL may use different TLS settings.
+Get development database connection settings from the team lead through the team's secure channel and fill `.env`. The starter requires a reachable PostgreSQL database; Redis/AI keys can remain empty until their feature owner enables those dependencies. Never commit real credentials.
 
 ```bash
 pnpm db:validate
-pnpm typecheck
-pnpm build
+pnpm check
+git switch -c feat/SCRUM-45-ticket-api
 pnpm start:dev
 ```
 
-The application loads `.env` automatically. Build, typecheck, start and test commands generate Prisma Client automatically.
-
-- API: http://localhost:4000/api/v1
-- Swagger: http://localhost:4000/docs (development only)
-- Liveness: http://localhost:4000/api/v1/health
-- Database readiness: http://localhost:4000/api/v1/health/ready
-
-## Database structure and migrations
-
-`prisma.config.ts` is detected automatically. It loads the entire `prisma/` directory, including the feature-owned files in `prisma/models/`. Add ERD models to those files. The generated client lives in `src/generated/prisma/` and stays out of Git.
-
-The initial scaffold has no business models or committed migrations. The provisioned development database is ready for those models; this setup does not invent application tables.
-
-The team lead creates and reviews migrations against a disposable local development database using `pnpm exec prisma migrate dev --name <change>`, then commits the migration files. To apply already committed migrations to the shared development database:
+Keep the terminal running and verify:
 
 ```bash
-pnpm db:migrate
-pnpm db:generate
+curl http://localhost:4000/health
+curl http://localhost:4000/ready
+curl http://localhost:4000/api/v1
 ```
 
-Do not run reset or schema-changing development commands against the shared database. Supabase Auth's managed `auth` schema stays outside Prisma's application schema.
+| Endpoint              | Behavior                                                       |
+| --------------------- | -------------------------------------------------------------- |
+| `/api/v1`             | Starter information in `{ data, requestId }`                   |
+| `/health`             | Public liveness: `{ "status": "ok" }`                          |
+| `/ready`              | Public PostgreSQL readiness; safe 503 error if the query fails |
+| `/docs`, `/docs-json` | Swagger UI/OpenAPI in development/test; disabled in production |
 
-Supabase Data API is disabled for the provisioned project because the NestJS backend uses Prisma. Automatic RLS is enabled for future public tables. Feature modules still need workspace/tenant authorization in the backend.
+Health paths follow the updated canonical contract outside `/api/v1`. The previous `/api/v1/health` and `/api/v1/health/ready` paths are replaced. Redis readiness will be added with the worker implementation.
 
-## Shared database access
+## Existing checkout
 
-Inject `PrismaService` from `src/common/database/prisma.service.ts` into feature services. `DatabaseModule` exports one shared client with a bounded connection pool. It connects on application startup and disconnects during shutdown. `/health/ready` runs a real database query and returns 503 without exposing connection errors if the query fails.
-
-## Updating an existing checkout
-
-Start from a clean checkout; commit or stash your own work before switching branches.
+Commit or stash your work before switching branches. Keep your local `.env`; add only newly required keys from the template.
 
 ```bash
 git switch main
 git pull --ff-only origin main
 nvm use
 pnpm install --frozen-lockfile
+git switch -c feat/SCRUM-<id>-<task>
+pnpm check
 pnpm start:dev
 ```
 
-Keep your existing `.env`; update it only when new environment settings are required. Feature work should use a branch such as `feat/SCRUM-13-investigation-api` and merge through a pull request.
+Normal feature work uses a branch → focused PR → peer review → merge. Use small meaningful commits. The module is already imported by `FeaturesModule`; add its own controllers/providers without editing shared bootstrap files.
 
-## Verification
+## Shared infrastructure
+
+- Global exception handler, typed error catalog and safe Prisma/native error mapping.
+- Strict DTO validation, nested field errors, bounded pagination and response envelope.
+- Request IDs, async request context, trace correlation and structured logs that omit raw headers/bodies/query strings/errors.
+- Public/role/workspace/current-user decorators and a default-deny HTTP access guard. A replaces the `AccessContextResolver` provider with verified JWT/ACTIVE membership logic.
+- Idempotency header admission and reusable Swagger response/error examples. Domain services still implement durable deduplication and transaction safety.
+- Exact CORS allowlist, Helmet, body limits, per-process throttling and shutdown cleanup.
+- Shared domain enums, tenant-scoped queue payloads and thin realtime event contracts.
+
+Feature READMEs document the owner slot, dependencies and Jira entry points. No dummy business endpoint or seed is presented as complete.
+
+## Database and migrations
+
+Inject the single `PrismaService` from DatabaseModule. It uses a bounded `@prisma/adapter-pg` pool, verifies the database during startup and disconnects on shutdown. Every future business query must use verified workspace scope.
+
+`prisma.config.ts` loads the entire `prisma/` folder, including owner files in `prisma/models/`. Generated client output is `src/generated/prisma/` and is ignored by Git. Build/typecheck/start/test scripts generate it automatically.
+
+The lead coordinates owner-reviewed migrations against a disposable local database with `pnpm exec prisma migrate dev --name <change>`. Commit schema and migration together. Apply reviewed migrations to a shared environment with:
 
 ```bash
-pnpm typecheck
-pnpm build
-pnpm test
-pnpm test:e2e
+pnpm db:migrate:deploy
+pnpm db:generate
 ```
 
-E2E tests replace PrismaService and use isolated test settings; they do not connect to the shared database. Check `/api/v1/health/ready` to verify the live configured database.
+Do not reset or run schema-changing development commands against the shared database. Supabase's managed auth schema stays outside application Prisma models. Keep tenant-aware foreign keys and backend authorization; database policies do not replace service/query checks. Seed implementation follows the owners' reviewed models.
 
-## Production
+## Commands and verification
 
-Use a separate production Supabase project and deployment environment variables. Set `NODE_ENV=production`, apply reviewed migrations with `pnpm db:migrate`, build with development dependencies present, then run `pnpm start:prod`.
+| Command                                 | Purpose                                                     |
+| --------------------------------------- | ----------------------------------------------------------- |
+| `pnpm check`                            | Formatting, lint, typecheck, unit tests, HTTP E2E and build |
+| `pnpm format` / `pnpm format:check`     | Shared formatting; skips generated/tool-owned files         |
+| `pnpm test` / `pnpm test:e2e`           | Unit/HTTP checks using isolated test configuration          |
+| `pnpm test:cov`                         | Unit coverage                                               |
+| `pnpm db:validate` / `pnpm db:generate` | Validate schema / regenerate Prisma Client                  |
+| `pnpm build` / `pnpm start:prod`        | Compile / run compiled server                               |
 
-Reference: [Supabase Prisma guide](https://supabase.com/docs/guides/database/prisma), [Prisma 7 upgrade guide](https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7), [Nest configuration](https://docs.nestjs.com/techniques/configuration).
+Default HTTP tests replace PrismaService, use test-only fixture controllers/resolver, and skip local `.env`; they never mutate the shared database. They verify common behavior, not real JWT, business tenant constraints, AI quality or durable worker/idempotency guarantees. Owners add those integration tests with their features.
+
+## Production and troubleshooting
+
+Use a separate production database and deployment secrets. Set `NODE_ENV=production`, apply reviewed migrations, build with development dependencies present, then run `pnpm start:prod`. Verify public app/API and always-running worker hosting before claiming release readiness. Deployment is not configured by this starter.
+
+- Environment validation errors show variable names/types, not supplied secret values.
+- Startup failure: check local connection/TLS settings, DNS/reachability and credentials; process logs stay generic.
+- Readiness 503: the database query failed; check the configured dependency. Liveness is a separate process check.
+- Private route 401: the default auth resolver denies tokens until Person A implements it.
+- Unknown DTO field 400: use the documented DTO, not extra properties or implicit type conversion.
+- Wrong Node/pnpm: run `nvm use` and install the pinned pnpm version before changing dependencies.
+
+Official references: [Nest configuration](https://docs.nestjs.com/techniques/configuration), [exception filters](https://docs.nestjs.com/exception-filters), [authorization](https://docs.nestjs.com/security/authorization), [Supabase Prisma](https://supabase.com/docs/guides/database/prisma).
