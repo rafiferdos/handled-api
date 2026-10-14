@@ -12,6 +12,7 @@ import { FeaturesModule } from './modules/features.module.js';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'test',
       validate: validateEnvironment,
     }),
     CommonModule,
