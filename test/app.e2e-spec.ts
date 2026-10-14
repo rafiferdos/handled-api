@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
-import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
 import { PrismaService } from '../src/common/database/prisma.service.js';
 import { configureApp } from '../src/config/configure-app.js';
 
 describe('AppController (e2e)', () => {
-  let app: NestExpressApplication<App>;
+  let app: NestExpressApplication;
   const database = {
     onModuleInit: vi.fn(),
     onModuleDestroy: vi.fn(),
@@ -24,7 +23,7 @@ describe('AppController (e2e)', () => {
       .useValue(database)
       .compile();
 
-    app = moduleFixture.createNestApplication<NestExpressApplication<App>>();
+    app = moduleFixture.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.init();
   });
@@ -34,7 +33,7 @@ describe('AppController (e2e)', () => {
       .get('/api/v1')
       .expect(200)
       .expect((response) => {
-        expect(response.body.data).toBe('Hello World!');
+        expect(response.body.data).toEqual({ name: 'Handled API', apiVersion: 'v1', status: 'starter' });
         expect(response.body.requestId).toBe(response.headers['x-request-id']);
       });
   });

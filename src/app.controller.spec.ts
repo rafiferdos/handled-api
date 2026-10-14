@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('reports the starter API identity', () => {
+      expect(appController.getInfo()).toEqual({ name: 'Handled API', apiVersion: 'v1', status: 'starter' });
     });
   });
 });

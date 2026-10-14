@@ -1,14 +1,20 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Inject } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service.js';
 import { Public } from './common/decorators/access.decorator.js';
+import { ApiSuccessResponse } from './common/decorators/api-success-response.decorator.js';
+import { AppInfoDto } from './app-info.dto.js';
 
 @Controller()
 @Public()
+@ApiTags('Application')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(@Inject(AppService) private readonly appService: AppService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @ApiOperation({ summary: 'Starter API information' })
+  @ApiSuccessResponse(AppInfoDto)
+  getInfo(): AppInfoDto {
+    return this.appService.getInfo();
   }
 }

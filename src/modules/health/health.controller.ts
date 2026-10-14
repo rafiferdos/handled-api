@@ -1,6 +1,9 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { PrismaService } from '../../common/database/prisma.service.js';
+import { Controller, Get, Inject } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { HealthService } from './health.service.js';
+import { HealthStatusDto, ReadinessStatusDto } from './health.dto.js';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator.js';
+import { ErrorCode } from '../../common/errors/error-codes.js';
 import { RawResponse } from '../../common/decorators/raw-response.decorator.js';
 import { Public } from '../../common/decorators/access.decorator.js';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -11,22 +14,20 @@ import { SkipThrottle } from '@nestjs/throttler';
 @SkipThrottle()
 @Controller()
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(HealthService) private readonly health: HealthService) {}
 
   @Get('health')
   @ApiOperation({ summary: 'Process liveness' })
-  live() {
-    return { status: 'ok' };
+  @ApiOkResponse({ type: HealthStatusDto })
+  live(): HealthStatusDto {
+    return this.health.live();
   }
 
   @Get('ready')
   @ApiOperation({ summary: 'Database readiness' })
-  async ready() {
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-      return { status: 'ok', database: 'connected' };
-    } catch {
-      throw new ServiceUnavailableException('Database unavailable');
-    }
+  @ApiOkResponse({ type: ReadinessStatusDto })
+  @ApiErrorResponses(ErrorCode.DEPENDENCY_UNAVAILABLE)
+  ready(): Promise<ReadinessStatusDto> {
+    return this.health.ready();
   }
 }
