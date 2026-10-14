@@ -3,10 +3,12 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../../common/database/prisma.service.js';
 import { RawResponse } from '../../common/decorators/raw-response.decorator.js';
 import { Public } from '../../common/decorators/access.decorator.js';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiTags('Health')
 @RawResponse()
 @Public()
+@SkipThrottle()
 @Controller()
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}

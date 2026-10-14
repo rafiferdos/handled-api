@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
@@ -7,7 +7,7 @@ import { PrismaService } from '../src/common/database/prisma.service.js';
 import { configureApp } from '../src/config/configure-app.js';
 
 describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestExpressApplication<App>;
   const database = {
     onModuleInit: vi.fn(),
     onModuleDestroy: vi.fn(),
@@ -24,7 +24,7 @@ describe('AppController (e2e)', () => {
       .useValue(database)
       .compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestExpressApplication<App>>();
     configureApp(app);
     await app.init();
   });

@@ -38,4 +38,30 @@ describe('environment configuration', () => {
       }),
     ).toThrow('PORT');
   });
+
+  it.each(['*', 'http://localhost:3000/path', 'https://example.com?token=private', 'http://localhost:3000,'])('rejects invalid CORS origins: %s', (origins) => {
+    expect(() => validateEnvironment({ DATABASE_URL: databaseUrl, CORS_ORIGINS: origins })).toThrow('CORS_ORIGINS');
+  });
+
+  it('normalizes exact origin allowlists and safe feature defaults', () => {
+    const config = validateEnvironment({ DATABASE_URL: databaseUrl, CORS_ORIGINS: 'http://localhost:3000, https://example.com', ACTION_SIMULATION: 'true' });
+    expect(config.CORS_ORIGINS).toBe('http://localhost:3000,https://example.com');
+    expect(config.ACTION_SIMULATION).toBe(true);
+    expect(config.EMBEDDING_DIMENSION).toBe(768);
+  });
+
+  it('blocks real action mode and incompatible embedding dimensions', () => {
+    expect(() => validateEnvironment({ DATABASE_URL: databaseUrl, ACTION_SIMULATION: 'false' })).toThrow('ACTION_SIMULATION');
+    expect(() => validateEnvironment({ DATABASE_URL: databaseUrl, EMBEDDING_DIMENSION: '1536' })).toThrow('EMBEDDING_DIMENSION');
+  });
+
+  it('never includes malformed secrets in startup validation messages', () => {
+    try {
+      validateEnvironment({ DATABASE_URL: 'private-database-password' });
+      throw new Error('Expected validation to fail');
+    } catch (error) {
+      expect(String(error)).toContain('DATABASE_URL');
+      expect(String(error)).not.toContain('private-database-password');
+    }
+  });
 });
