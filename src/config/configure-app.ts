@@ -1,9 +1,10 @@
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { RequestMethod } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { RequestContextMiddleware } from '../common/middleware/request-context.middleware.js';
+import { createValidationPipe } from '../common/pipes/validation.pipe.js';
 
 // Production, local development and API tests share the same HTTP boundary.
 export function configureApp(app: INestApplication): void {
@@ -24,14 +25,7 @@ export function configureApp(app: INestApplication): void {
       .split(',')
       .map((origin) => origin.trim()),
   });
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: false },
-    }),
-  );
+  app.useGlobalPipes(createValidationPipe());
 
   if (config.getOrThrow<string>('NODE_ENV') !== 'production') {
     const documentConfig = new DocumentBuilder()
