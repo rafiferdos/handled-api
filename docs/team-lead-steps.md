@@ -37,6 +37,11 @@ Sources: [Lead epic SCRUM-5](https://team-singularity.atlassian.net/browse/SCRUM
 
 ## Step 1 — Define the Lead's API and data contracts
 
+**Delivery status:** contract-authoring implementation complete on
+`feat/SCRUM-11-lead-api-contracts`; see [Lead contracts](lead-contracts.md).
+Cross-owner review/G0 freeze remains pending. No Step 2 implementation is started
+by this delivery.
+
 **Build:** Investigation/Proposal/Decision request and response DTOs, runtime
 output schemas, enums/state rules, error/status contracts, expectedVersion,
 idempotency semantics, and typed read-tool/approved-action interfaces. Reuse
