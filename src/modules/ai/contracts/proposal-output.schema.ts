@@ -24,7 +24,8 @@ export const classificationSchema = z
     confidence: z.enum(Confidence),
     missingFacts: z
       .array(textSchema(ContractLimit.FACT))
-      .max(ContractLimit.FACTS),
+      .max(ContractLimit.FACTS)
+      .readonly(),
   })
   .readonly();
 
@@ -35,10 +36,14 @@ export const proposalOutputSchema = z
     confidence: z.enum(Confidence),
     missingFacts: z
       .array(textSchema(ContractLimit.FACT))
-      .max(ContractLimit.FACTS),
+      .max(ContractLimit.FACTS)
+      .readonly(),
     recommendation: recommendationSchema.nullable(),
     replyDraft: textSchema(ContractLimit.REPLY),
-    evidenceRefs: z.array(referenceSchema).max(ContractLimit.SOURCES),
+    evidenceRefs: z
+      .array(referenceSchema)
+      .max(ContractLimit.SOURCES)
+      .readonly(),
   })
   .superRefine((proposal, context) => {
     if (

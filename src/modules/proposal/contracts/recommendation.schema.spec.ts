@@ -74,6 +74,16 @@ describe('structured proposal boundary', () => {
     expect(proposalOutputSchema.parse(proposal)).toEqual(proposal);
   });
 
+  it('keeps validated evidence, missing facts and action parameters immutable', () => {
+    const parsed = proposalOutputSchema.parse(proposal);
+    expect(Reflect.set(parsed.evidenceRefs, 0, 'forged-source')).toBe(false);
+    expect(Reflect.set(parsed.missingFacts, 0, 'forged-fact')).toBe(false);
+    expect(Reflect.set(parsed.recommendation!.params, 'override', true)).toBe(
+      false,
+    );
+    expect(parsed.evidenceRefs).toEqual(proposal.evidenceRefs);
+  });
+
   it('supports safe manual review without forcing an invented action or evidence', () => {
     expect(
       proposalOutputSchema.parse({

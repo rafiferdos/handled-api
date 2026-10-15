@@ -12,7 +12,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { ContractLimit } from '../../ai/contracts/contract-primitives.js';
-import { openApiSchema } from '../../ai/contracts/openapi-schema.js';
+import { nullableObjectProperty } from '../../ai/contracts/openapi-schema.js';
 import { WorkspaceParamsDto } from '../../ai/dto/workspace-params.dto.js';
 import { recommendationSchema } from '../contracts/recommendation.schema.js';
 import type { Recommendation } from '../contracts/recommendation.schema.js';
@@ -74,7 +74,7 @@ export class EditProposalRequestDto extends VersionedProposalRequestDto {
   @Matches(/\S/)
   readonly replyDraft: string;
 
-  @ApiProperty({ allOf: [openApiSchema(nullableRecommendationSchema)] })
+  @ApiProperty(nullableObjectProperty(recommendationSchema))
   @ValidateBy({
     name: 'isRecommendation',
     validator: {

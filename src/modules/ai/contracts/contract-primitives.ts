@@ -20,11 +20,6 @@ export const positiveIntegerSchema = z
   .int()
   .min(1)
   .max(Number.MAX_SAFE_INTEGER);
-export const nonNegativeIntegerSchema = z
-  .number()
-  .int()
-  .min(0)
-  .max(Number.MAX_SAFE_INTEGER);
 export const timestampSchema = z.iso.datetime({ offset: true });
 
 // Preserve text exactly: validation must not silently rewrite evidence or hashes.
