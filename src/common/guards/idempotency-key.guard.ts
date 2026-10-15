@@ -5,6 +5,7 @@ import type { Request } from 'express';
 import { REQUIRE_IDEMPOTENCY_KEY } from '../decorators/idempotency-key.decorator.js';
 import { AppException } from '../errors/app.exception.js';
 import { ErrorCode } from '../errors/error-codes.js';
+import { isIdempotencyKey } from '../contracts/idempotency.contracts.js';
 
 export interface IdempotentRequest extends Request {
   idempotencyKey?: string;
@@ -25,7 +26,7 @@ export class IdempotencyKeyGuard implements CanActivate {
     }
     const request = context.switchToHttp().getRequest<IdempotentRequest>();
     const key = request.headers['idempotency-key'];
-    if (typeof key !== 'string' || !/^[a-zA-Z0-9._-]{1,128}$/.test(key)) {
+    if (!isIdempotencyKey(key)) {
       throw new AppException(ErrorCode.VALIDATION_ERROR, [
         {
           field: 'Idempotency-Key',
