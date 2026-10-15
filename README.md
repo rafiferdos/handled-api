@@ -6,6 +6,8 @@ Team starter for Handled's modular NestJS REST backend: PostgreSQL/Supabase, Pri
 
 Read [contributing](CONTRIBUTING.md), [ownership](docs/ownership.md), [feature development](docs/feature-development.md), [configuration](docs/configuration.md) and the [14 October Notion source register](docs/planning-sources.md).
 
+The lead's [Step 1 API/data contracts](docs/lead-contracts.md) now provide tested DTOs, strict AI/read-tool/action schemas and reusable OpenAPI route metadata. Consumer review remains pending; these artifacts do not register business endpoints. Follow the [numbered backend execution plan](docs/team-lead-steps.md) for later implementation and dependency gates.
+
 ## First checkout
 
 Requires Git and nvm. The existing runtime is Node 22 (>=22.13); pnpm is pinned to 11.25.0. The current plan permits compatible Node 22; Node 24 adoption belongs in a separate verified runtime change.
