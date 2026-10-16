@@ -2,3 +2,59 @@
 // Starter: no business models implemented. Add schema through an owner-reviewed PR.
 // Every tenant model needs workspaceId and same-workspace constraints.
 // Coordinate cross-domain relations and migrations; see docs/ownership.md.
+
+CREATE EXTENSION IF NOT EXISTS vector;
+
+model KnowledgeDocument {
+  id              String    @id @db.Uuid
+  workspaceId     String    @db.Uuid
+  title           String    @db.VarChar(255)
+  body            String?   @db.Text
+  version         String    @default("1") @db.VarChar(255)
+  contentHash     String?   @db.VarChar(255)
+  slug            String?   @db.VarChar(255)
+  createdByUserId String?   @db.Uuid
+  publishedAt     DateTime? @db.Timestamptz
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @db.Timestamptz
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id])
+  chunks          KnowledgeChunk[]
+  gaps            KnowledgeGap[]   @relation("KnowledgeGapDocument")
+
+  @@map("KnowledgeDocument")
+}
+
+model KnowledgeChunk {
+  id              String  @id @db.Uuid
+  workspaceId     String  @db.Uuid
+  documentId      String  @db.Uuid
+  documentVersion String  @db.VarChar(255)
+  chunkIndex      Int
+  content         String  @db.Text
+  embedding       Unsupported("vector(768)")?
+  contentHash     String? @db.VarChar(255)
+  tokenEstimate   Int?
+
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id])
+  document        KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, documentVersion, chunkIndex])
+  @@map("KnowledgeChunk")
+}
+
+model KnowledgeGap {
+  id              String   @id @db.Uuid
+  workspaceId     String   @db.Uuid
+  normalizedKey   String   @db.VarChar(255)
+  exampleQuery    String   @db.Text
+  draftDocumentId String?  @db.Uuid
+  occurrences     Int      @default(1)
+  firstSeenAt     DateTime @default(now()) @db.Timestamptz
+  lastSeenAt      DateTime @default(now()) @db.Timestamptz
+
+  workspace       Workspace          @relation(fields: [workspaceId], references: [id])
+  document        KnowledgeDocument?  @relation("KnowledgeGapDocument", fields: [draftDocumentId], references: [id], onDelete: SetNull)
+
+  @@map("KnowledgeGap")
+}
