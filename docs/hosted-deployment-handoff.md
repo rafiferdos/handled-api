@@ -12,12 +12,22 @@ Created `handled-redis` (`red-db9t72vbtjjs73cvr4o0`), Free/Singapore/noeviction,
 no persistence, external access disabled. The user completed official Render CLI
 authorization; private CLI state is under `/tmp/handled-render-auth`.
 
-[PR #7](https://github.com/rafiferdos/handled-api/pull/7) targets `testing` and is
-being revised for the approved Free preview. The [Blueprint](../render.yaml)
+[PR #7](https://github.com/rafiferdos/handled-api/pull/7) is merged into `testing`.
+The live application commit is `8f0043396282fbaac024d05990b00c45060566a8`.
+Current deploy `dep-db9tdt2jnfac73dirdeg` is `live`; the earlier initial deploy
+`dep-db9tbh4s728c73cvakbg` also succeeded. API base is
+`https://handled-api-zv4h.onrender.com/api/v1`; `/health` and `/ready` return 200,
+and anonymous `/api/v1/workspaces` returns 401.
+
+The [Blueprint](../render.yaml)
 contains only Free API and Free Redis. `pnpm start:preview` supervises the
 existing API and worker child processes, stops both on failure or shutdown, and
 forces stuck children out before the Free host's 30-second shutdown deadline.
-The separate production commands remain available.
+Render uses the equivalent direct `node dist/preview.js` command to avoid an
+extra package-manager process; the new instance sampled about 419 MiB versus
+468 MiB before, within its 512 MiB limit. This is a preview, not a capacity benchmark.
+The separate production commands remain available. See the detailed
+[hosted verification evidence](hosted-deployment-verification.md).
 
 The revised Blueprint passed authenticated Render validation. A Free service
 cannot configure `maxShutdownDelaySeconds`; that field was removed. Five real
@@ -33,7 +43,13 @@ and the private identity function are verified. User explicitly approved
 `handled_render_preview` with BYPASSRLS and restricted business DML/function access;
 it is provisioned, has no direct managed-Auth privileges or postgres membership,
 and successfully read business data/called the function. Its credential remains
-private. The real Gemini probe again failed
+private. Actual hosted synthetic no-op outbox jobs completed through Redis/BullMQ
+and the worker: initial delivery PUBLISHED at attempt 1; deliberately seeded
+missing delivery recovered after lease expiry and PUBLISHED at attempt 2.
+After the runtime replacement and full old-instance drain/shutdown window, a new
+no-op job also PUBLISHED at attempt 1, and health/readiness/private denial stayed
+200/200/401. No matching runtime failure logs were found.
+These are infrastructure tests, not AI/business acceptance. The real Gemini probe again failed
 `DEPENDENCY_TIMEOUT`; hosted business/AI acceptance is pending.
 
 See [the Free rollout guide](render-deployment.md) for exact runtime settings,

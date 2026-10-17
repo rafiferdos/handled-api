@@ -36,7 +36,9 @@ is authorized. All resources in [render.yaml](../render.yaml) explicitly use
 
 ## Runtime
 
-`pnpm start:preview` starts `dist/preview.js`. It supervises the existing
+Render starts `node dist/preview.js` directly to avoid an extra package-manager
+process in the 512 MB Free instance. `pnpm start:preview` runs the same entrypoint
+for manual use. It supervises the existing
 `dist/main.js` API and `dist/worker.js` worker as two child Node processes. A child
 failure stops its peer and exits nonzero so Render can restart the service.
 SIGTERM/SIGINT reach both children; after 25 seconds, unresponsive children are
