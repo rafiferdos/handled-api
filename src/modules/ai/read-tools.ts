@@ -26,6 +26,7 @@ import type { EvidenceSource } from '../proposal/contracts/evidence.schema.js';
 
 export interface ToolContext extends ReadToolContext {
   readonly actor: WorkspaceActor;
+  readonly signal?: AbortSignal;
 }
 export function toolSource(
   kind: 'customer' | 'payment' | 'subscription' | 'access',
@@ -95,7 +96,7 @@ export class ReadTools {
         context.workspaceId,
         call.arguments.query,
         call.arguments.topK,
-        AbortSignal.timeout(60000),
+        context.signal ?? AbortSignal.timeout(60000),
       );
       await this.authorize(context);
       return {

@@ -16,6 +16,8 @@ const result = <T>(value: T): AiResult<T> => ({
 /** Deterministic external boundary only. Never registered by a production module. */
 export class FixtureProvider extends AiProvider {
   beforeEmbed?: () => Promise<void>;
+  beforeRecommend?: () => Promise<void>;
+  beforeReply?: () => Promise<void>;
   classification: Classification = {
     category: 'OTHER',
     priority: TicketPriority.MEDIUM,
@@ -24,6 +26,7 @@ export class FixtureProvider extends AiProvider {
   };
   output?: ProposalOutput;
   calls: readonly ReadToolCall[] = [];
+  toolBatches: Array<readonly ReadToolCall[]> = [];
   metadata() {
     return {
       provider: 'gemini' as const,
@@ -36,15 +39,19 @@ export class FixtureProvider extends AiProvider {
     return Promise.resolve(result(this.classification));
   }
   planTools() {
+    if (this.toolBatches.length)
+      return Promise.resolve(result(this.toolBatches.shift()!));
     const calls = this.calls;
     this.calls = [];
     return Promise.resolve(result(calls));
   }
-  recommend() {
+  async recommend() {
+    await this.beforeRecommend?.();
     if (!this.output) throw new Error('Fixture output must be explicit');
     return Promise.resolve(result(this.output));
   }
-  reply() {
+  async reply() {
+    await this.beforeReply?.();
     return Promise.resolve(
       result({
         replyDraft:
