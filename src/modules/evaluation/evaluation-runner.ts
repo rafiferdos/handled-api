@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AiProvider } from '../ai/ai-provider.js';
+import type { AiUsage } from '../ai/ai-provider.js';
 import { readToolCallSchema } from '../ai/contracts/read-tool.contracts.js';
 import {
   classificationSchema,
@@ -27,6 +28,9 @@ export class EvaluationRunner {
     const results = [];
     for (const c of evaluationCases) {
       const start = Date.now();
+      const usage: Partial<
+        Record<'classification' | 'tools' | 'recommendation' | 'reply', AiUsage>
+      > = {};
       try {
         const fixture = evaluationFixture(c),
           ticket = {
@@ -34,15 +38,15 @@ export class EvaluationRunner {
             message: c.message,
             customerId: fixture.customerId,
           };
-        const classification = classificationSchema.parse(
-          (await this.provider.classify({ ticket }, signal)).value,
+        const classified = await this.provider.classify({ ticket }, signal);
+        usage.classification = classified.usage;
+        const classification = classificationSchema.parse(classified.value);
+        const planned = await this.provider.planTools(
+          { ticket, customerId: fixture.customerId, classification },
+          signal,
         );
-        const tools = (
-          await this.provider.planTools(
-            { ticket, customerId: fixture.customerId, classification },
-            signal,
-          )
-        ).value;
+        usage.tools = planned.usage;
+        const tools = planned.value;
         const toolsScoped =
           tools.length > 0 &&
           tools.every(
@@ -72,17 +76,18 @@ export class EvaluationRunner {
                 .slice(0, 1)
                 .map((r) => evaluationPolicySource(r.policy, r.score));
         const sources = [...fixture.sources, ...retrieved];
-        const generated = proposalOutputSchema.parse(
-          (
-            await this.provider.recommend(
-              { ticket, classification, observations: fixture, sources },
-              signal,
-            )
-          ).value,
+        const recommended = await this.provider.recommend(
+          { ticket, classification, observations: fixture, sources },
+          signal,
         );
-        const reply = (
-          await this.provider.reply({ proposal: generated, sources }, signal)
-        ).value;
+        usage.recommendation = recommended.usage;
+        const generated = proposalOutputSchema.parse(recommended.value);
+        const drafted = await this.provider.reply(
+          { proposal: generated, sources },
+          signal,
+        );
+        usage.reply = drafted.usage;
+        const reply = drafted.value;
         const score = scoreEvaluation(c, {
           category: classification.category,
           recommendationType: generated.recommendation?.type ?? null,
@@ -105,6 +110,7 @@ export class EvaluationRunner {
           caseId: c.id,
           ...score,
           durationMs: Date.now() - start,
+          usage,
         });
       } catch (error) {
         results.push({
@@ -113,6 +119,7 @@ export class EvaluationRunner {
           errorCode:
             error instanceof AppException ? error.code : 'AI_PROVIDER_ERROR',
           durationMs: Date.now() - start,
+          usage,
         });
       }
     }
@@ -122,6 +129,8 @@ export class EvaluationRunner {
       verification: 'provider-benchmark-with-synthetic-facts',
       boundaries:
         'Does not execute DB mutations, BullMQ or hosted flows. Grounding uses provided sources and a limited forbidden-claims check; human evaluation is still required.',
+      usageCoverage:
+        'Successful structured-output stages only; failed attempts and embedding token usage are unavailable. This is not total billed usage.',
       createdAt: new Date().toISOString(),
       total: results.length,
       passed: results.filter((r) => r.passed).length,
