@@ -18,10 +18,10 @@ import type {
   PublicTicketDto,
   IssueFormTokenDto,
 } from './public-ticket.dto.js';
-export interface PublicFormContext {
+import { resolveSupportClientIp } from './support-proxy.js';
+import type { SupportProxyContext } from './support-proxy.js';
+export interface PublicFormContext extends SupportProxyContext {
   token: string | undefined;
-  origin: string | undefined;
-  ip: string;
   requestId: string;
 }
 @Injectable()
@@ -84,7 +84,12 @@ export class PublicTicketService {
     )
       throw new AppException('FORBIDDEN');
     const tokenHash = this.digest(context.token);
-    const actorScope = `public:${this.digest(`${context.ip}|${tokenHash}`)}`;
+    const clientIp = resolveSupportClientIp(
+      this.config.get<string>('SUPPORT_PROXY_SECRET'),
+      slug,
+      context,
+    );
+    const actorScope = `public:${this.digest(`${clientIp}|${tokenHash}`)}`;
     return this.replay.run(
       {
         workspaceId: workspace.id,

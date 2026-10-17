@@ -87,4 +87,26 @@ describe('environment configuration', () => {
       expect(String(error)).not.toContain('private-database-password');
     }
   });
+
+  it('requires a strong signing secret when the support proxy is configured', () => {
+    expect(() =>
+      validateEnvironment({
+        DATABASE_URL: databaseUrl,
+        SUPPORT_PROXY_SECRET: 'short-private-secret',
+      }),
+    ).toThrow('SUPPORT_PROXY_SECRET');
+    expect(
+      validateEnvironment({
+        DATABASE_URL: databaseUrl,
+        SUPPORT_PROXY_SECRET: '',
+      }).SUPPORT_PROXY_SECRET,
+    ).toBe('');
+    const secret = 'synthetic-proxy-secret-at-least-32-characters';
+    expect(
+      validateEnvironment({
+        DATABASE_URL: databaseUrl,
+        SUPPORT_PROXY_SECRET: secret,
+      }).SUPPORT_PROXY_SECRET,
+    ).toBe(secret);
+  });
 });

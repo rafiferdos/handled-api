@@ -40,11 +40,17 @@ export class PublicTicketController {
   @RequireIdempotencyKey()
   @ApiHeader({ name: 'X-Support-Form-Token', required: true })
   @ApiHeader({ name: 'Origin', required: true })
+  @ApiHeader({ name: 'X-Support-Client-IP', required: false })
+  @ApiHeader({ name: 'X-Support-Timestamp', required: false })
+  @ApiHeader({ name: 'X-Support-Signature', required: false })
   @ApiSuccessResponse(TicketReceiptDto, { status: 201 })
   create(
     @Param('workspaceSlug') slug: string,
     @Headers('x-support-form-token') token: string | undefined,
     @Headers('origin') origin: string | undefined,
+    @Headers('x-support-client-ip') clientIp: string | undefined,
+    @Headers('x-support-timestamp') timestamp: string | undefined,
+    @Headers('x-support-signature') signature: string | undefined,
     @Req() request: Request,
     @RequestId() requestId: string,
     @IdempotencyKey() key: string,
@@ -57,6 +63,9 @@ export class PublicTicketController {
       {
         token,
         origin,
+        clientIp,
+        timestamp,
+        signature,
         ip: request.ip || request.socket.remoteAddress || 'unknown',
         requestId,
       },
