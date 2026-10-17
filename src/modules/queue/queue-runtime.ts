@@ -70,14 +70,32 @@ export class QueueRuntime implements OnModuleDestroy {
   }
   private async tick() {
     try {
-      await this.dispatcher.dispatch(async (data) => {
-        await this.queue!.add('deliver', data, {
-          jobId: `${data.outboxId}-${data.lockToken}`,
-          attempts: 1,
-          removeOnComplete: { count: 1000 },
-          removeOnFail: { count: 1000 },
-        });
-      });
+      const counts = await this.queue!.getJobCounts(
+        'active',
+        'waiting',
+        'delayed',
+        'prioritized',
+      );
+      const inFlight = Object.values(counts).reduce(
+        (total, count) => total + count,
+        0,
+      );
+      const available = Math.max(
+        0,
+        this.config.get<number>('INVESTIGATION_CONCURRENCY', 2) - inFlight,
+      );
+      if (available > 0)
+        await this.dispatcher.dispatch(
+          async (data) => {
+            await this.queue!.add('deliver', data, {
+              jobId: `${data.outboxId}-${data.lockToken}`,
+              attempts: 1,
+              removeOnComplete: { count: 1000 },
+              removeOnFail: { count: 1000 },
+            });
+          },
+          Math.min(20, available),
+        );
     } catch {
       this.logger.warn({
         event: 'outbox.dispatch.failed',

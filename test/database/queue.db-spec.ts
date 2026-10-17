@@ -9,10 +9,17 @@ import { createActorFixture, createTestDatabase } from './helpers.js';
 
 const db = createTestDatabase();
 const uow = new UnitOfWork(db.prisma);
+const workspaces: string[] = [];
+afterEach(async () => {
+  await db.prisma.outboxEvent.deleteMany({
+    where: { workspaceId: { in: workspaces.splice(0) } },
+  });
+});
 afterAll(() => db.close());
 
 it('retains committed work when Redis fails and recovers an expired delivery lease', async () => {
   const actor = await createActorFixture(db.prisma);
+  workspaces.push(actor.workspaceId);
   const intent = await uow.run((tx) =>
     enqueueJob(
       tx,
@@ -22,6 +29,10 @@ it('retains committed work when Redis fails and recovers an expired delivery lea
       actor.requestId,
     ),
   );
+  await db.prisma.outboxEvent.update({
+    where: { id: intent.id },
+    data: { availableAt: new Date(-172800000) },
+  });
   const registry = new JobRegistry();
   const dispatcher = new OutboxDispatcher(uow, registry);
   await dispatcher.dispatch(async () => {
@@ -34,7 +45,7 @@ it('retains committed work when Redis fails and recovers an expired delivery lea
   expect(pending.lockToken).toBeNull();
   await db.prisma.outboxEvent.update({
     where: { id: intent.id },
-    data: { availableAt: new Date(0) },
+    data: { availableAt: new Date(-172800000) },
   });
   const deliveries: unknown[] = [];
   await dispatcher.dispatch(async (data) => {
@@ -54,10 +65,15 @@ it('retains committed work when Redis fails and recovers an expired delivery lea
 
 it('uses canonical tenant payloads and fences duplicate or obsolete workers', async () => {
   const actor = await createActorFixture(db.prisma);
+  workspaces.push(actor.workspaceId);
   const id = randomUUID();
   const intent = await uow.run((tx) =>
     enqueueJob(tx, actor.workspaceId, 'action', id, actor.requestId),
   );
+  await db.prisma.outboxEvent.update({
+    where: { id: intent.id },
+    data: { availableAt: new Date(-172800000) },
+  });
   const registry = new JobRegistry();
   const dispatcher = new OutboxDispatcher(uow, registry);
   let effects = 0;

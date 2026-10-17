@@ -59,11 +59,13 @@ export class OutboxDispatcher {
     @Inject(UnitOfWork) private readonly uow: UnitOfWork,
     @Inject(JobRegistry) private readonly registry: JobRegistry,
   ) {}
-  async dispatch(send: (data: JobDelivery) => Promise<void>) {
+  async dispatch(send: (data: JobDelivery) => Promise<void>, limit = 1) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 20)
+      throw new AppException('VALIDATION_ERROR');
     const claimed = await this.uow.run(async (tx) => {
       const rows = await tx.$queryRaw<
         OutboxEvent[]
-      >`SELECT * FROM handled."OutboxEvent" WHERE type IN ('job.investigation','job.action','job.knowledge-index') AND status='PENDING' AND "availableAt"<=clock_timestamp() AND ("lockedUntil" IS NULL OR "lockedUntil"<=clock_timestamp()) ORDER BY "availableAt",id FOR UPDATE SKIP LOCKED LIMIT 20`;
+      >`SELECT * FROM handled."OutboxEvent" WHERE type IN ('job.investigation','job.action','job.knowledge-index') AND status='PENDING' AND "availableAt"<=clock_timestamp() AND ("lockedUntil" IS NULL OR "lockedUntil"<=clock_timestamp()) ORDER BY "availableAt",id FOR UPDATE SKIP LOCKED LIMIT ${limit}`;
       const result: JobDelivery[] = [];
       for (const row of rows) {
         if (row.attempts >= MAX_ATTEMPTS) {
@@ -102,7 +104,7 @@ export class OutboxDispatcher {
   async process(input: unknown) {
     const parsed = deliverySchema.safeParse(input);
     if (!parsed.success) throw new AppException('VALIDATION_ERROR');
-    const data = parsed.data;
+    let data = parsed.data;
     const row = await this.uow.run((tx) =>
       tx.outboxEvent.findUnique({ where: { id: data.outboxId } }),
     );
@@ -121,6 +123,26 @@ export class OutboxDispatcher {
       await this.release(data);
       return;
     }
+    // Consume the delivery token once. Redis may redeliver while the previous
+    // handler is alive; only the winner owns the database execution lease.
+    const executionToken = randomUUID();
+    const claimed = await this.uow.run((tx) =>
+      tx.outboxEvent.updateMany({
+        where: {
+          id: row.id,
+          workspaceId: data.workspaceId,
+          status: 'PENDING',
+          lockToken: data.lockToken,
+          lockedUntil: { gt: new Date() },
+        },
+        data: {
+          lockToken: executionToken,
+          lockedUntil: new Date(Date.now() + LEASE_MS),
+        },
+      }),
+    );
+    if (!claimed.count) return;
+    data = { ...data, lockToken: executionToken };
     const controller = new AbortController();
     const timer = setInterval(() => {
       void this.renew(data)
@@ -172,8 +194,13 @@ export class OutboxDispatcher {
       });
       if (!row || row.lockToken !== data.lockToken || row.status !== 'PENDING')
         return;
-      await tx.outboxEvent.update({
-        where: { id: row.id },
+      await tx.outboxEvent.updateMany({
+        where: {
+          id: row.id,
+          workspaceId: data.workspaceId,
+          status: 'PENDING',
+          lockToken: data.lockToken,
+        },
         data: {
           status: row.attempts >= MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
           lockToken: null,

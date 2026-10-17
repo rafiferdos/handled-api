@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { setTimeout } from 'node:timers/promises';
 import { createActorFixture, createTestDatabase } from './helpers.js';
 import { FixtureProvider } from './provider.js';
 import { UnitOfWork } from '../../src/common/database/unit-of-work.js';
@@ -208,4 +209,73 @@ it('fences an obsolete worker before proposal commit and recovers with a fresh d
       where: { workspaceId: f.actor.workspaceId },
     }),
   ).toBe(1);
+});
+it('admits a single execution owner when the same delivery is concurrently redelivered', async () => {
+  const f = await fixture();
+  provider.output = {
+    category: 'OTHER',
+    summary: 'Human review required',
+    confidence: provider.classification.confidence,
+    missingFacts: ['No policy'],
+    recommendation: null,
+    replyDraft: 'An agent will review this.',
+    evidenceRefs: [],
+  };
+  const queued = await service.start(f.actor, f.ticket.id);
+  let releaseFirst!: () => void,
+    releaseSecond!: () => void,
+    entered!: () => void,
+    calls = 0;
+  const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    }),
+    secondGate = new Promise<void>((resolve) => {
+      releaseSecond = resolve;
+    }),
+    firstEntered = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+  provider.beforeRecommend = async () => {
+    calls++;
+    if (calls === 1) {
+      entered();
+      await firstGate;
+    } else await secondGate;
+  };
+  const row = await db.prisma.outboxEvent.findFirstOrThrow({
+      where: { workspaceId: f.actor.workspaceId, type: 'job.investigation' },
+    }),
+    lockToken = randomUUID();
+  await db.prisma.outboxEvent.update({
+    where: { id: row.id },
+    data: { lockToken, lockedUntil: new Date(Date.now() + 60000) },
+  });
+  const data = {
+    workspaceId: f.actor.workspaceId,
+    outboxId: row.id,
+    lockToken,
+  };
+  const first = dispatcher.process(data);
+  await firstEntered;
+  const second = dispatcher.process(data);
+  try {
+    await Promise.race([second, setTimeout(150)]);
+    releaseFirst();
+    await first;
+    releaseSecond();
+    await second;
+    expect(calls).toBe(1);
+    expect(
+      (
+        await db.prisma.investigationRun.findUniqueOrThrow({
+          where: { id: queued.investigationId },
+        })
+      ).status,
+    ).toBe('NEEDS_REVIEW');
+  } finally {
+    releaseFirst();
+    releaseSecond();
+    provider.beforeRecommend = undefined;
+    await Promise.allSettled([first, second]);
+  }
 });

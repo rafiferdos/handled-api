@@ -26,11 +26,18 @@ describe.skipIf(!url)('actual Redis/BullMQ recovery', () => {
     );
   const db = createTestDatabase(),
     uow = new UnitOfWork(db.prisma);
+  const workspaces: string[] = [];
+  afterEach(async () => {
+    await db.prisma.outboxEvent.deleteMany({
+      where: { workspaceId: { in: workspaces.splice(0) } },
+    });
+  });
   afterAll(() => db.close());
   it('keeps an intent after real connection refusal and completes it once after worker restart', async () => {
     const actor = await createActorFixture(db.prisma),
       registry = new JobRegistry(),
       dispatcher = new OutboxDispatcher(uow, registry);
+    workspaces.push(actor.workspaceId);
     registry.register('action', async (job) => {
       if (job.workspaceId !== actor.workspaceId)
         throw new Error('Different fixture scope');
@@ -89,7 +96,7 @@ describe.skipIf(!url)('actual Redis/BullMQ recovery', () => {
     ).toBe('PENDING');
     await db.prisma.outboxEvent.update({
       where: { id: intent.id },
-      data: { availableAt: new Date(0) },
+      data: { availableAt: new Date(-172800000) },
     });
     const second = new QueueRuntime(config, dispatcher);
     await second.start();
@@ -119,6 +126,76 @@ describe.skipIf(!url)('actual Redis/BullMQ recovery', () => {
       ).toBe(1);
     } finally {
       await second.onModuleDestroy();
+    }
+  });
+  it('does not spend delivery attempts on healthy work waiting behind a full worker', async () => {
+    const actor = await createActorFixture(db.prisma),
+      registry = new JobRegistry(),
+      dispatcher = new OutboxDispatcher(uow, registry);
+    workspaces.push(actor.workspaceId);
+    let release!: () => void, entered!: () => void;
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+      started = new Promise<void>((resolve) => {
+        entered = resolve;
+      });
+    registry.register('action', async (job) => {
+      if (job.workspaceId !== actor.workspaceId)
+        throw new Error('Different fixture scope');
+      entered();
+      await gate;
+      await uow.run(async (tx) => {
+        await job.complete(tx);
+      });
+    });
+    for (let i = 0; i < 8; i++) {
+      const row = await uow.run((tx) =>
+        enqueueJob(
+          tx,
+          actor.workspaceId,
+          'action',
+          randomUUID(),
+          actor.requestId,
+        ),
+      );
+      await db.prisma.outboxEvent.update({
+        where: { id: row.id },
+        data: { availableAt: new Date(-172800000) },
+      });
+    }
+    const runtime = new QueueRuntime(
+      new ConfigService({ REDIS_URL: url, INVESTIGATION_CONCURRENCY: 1 }),
+      dispatcher,
+    );
+    await runtime.start();
+    try {
+      await Promise.race([
+        started,
+        setTimeout(5000).then(() => {
+          throw new Error('Worker did not start');
+        }),
+      ]);
+      // Simulate queue residence beyond the DB delivery lease for non-running work.
+      const current = await db.prisma.outboxEvent.findMany({
+        where: { workspaceId: actor.workspaceId },
+        orderBy: { updatedAt: 'asc' },
+      });
+      for (const row of current.slice(0, -1))
+        if (row.lockToken)
+          await db.prisma.outboxEvent.update({
+            where: { id: row.id },
+            data: { lockedUntil: new Date(0) },
+          });
+      await setTimeout(1200);
+      const rows = await db.prisma.outboxEvent.findMany({
+        where: { workspaceId: actor.workspaceId },
+      });
+      expect(rows.filter((row) => row.attempts > 0)).toHaveLength(1);
+      expect(rows.filter((row) => row.status === 'FAILED')).toHaveLength(0);
+    } finally {
+      release();
+      await runtime.onModuleDestroy();
     }
   });
 });
