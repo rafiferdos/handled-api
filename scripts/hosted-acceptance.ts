@@ -1,5 +1,5 @@
 import { createHmac, randomUUID } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rename, writeFile } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
@@ -21,7 +21,12 @@ export function verifyBusinessEffect(
   const before = record.parse(action.beforeState);
   const after = record.parse(action.afterState);
   const context = record.parse(contextInput);
-  check(before.id === after.id, 'Action target identity changed');
+  check(
+    typeof before.id === 'string' &&
+      before.id.length > 0 &&
+      before.id === after.id,
+    'Action target identity changed',
+  );
   if (action.type === 'REFUND_DUPLICATE_PAYMENT') {
     check(
       before.status === 'SETTLED' && after.status === 'REFUNDED',
@@ -163,12 +168,13 @@ export async function hostedAcceptance(
       throw error;
     state = { workspaceId: cfg.HANDLED_WORKSPACE_ID, cases: {} };
   }
-  const save = () =>
-    writeFile(
-      cfg.HANDLED_ACCEPTANCE_STATE_FILE,
-      `${JSON.stringify(state, null, 2)}\n`,
-      { mode: 0o600 },
-    );
+  const save = async () => {
+    const temporary = `${cfg.HANDLED_ACCEPTANCE_STATE_FILE}.${randomUUID()}.tmp`;
+    await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, {
+      mode: 0o600,
+    });
+    await rename(temporary, cfg.HANDLED_ACCEPTANCE_STATE_FILE);
+  };
   const report = (event: string, details: Record<string, unknown>) =>
     process.stdout.write(`${JSON.stringify({ event, ...details })}\n`);
   async function call(
@@ -403,6 +409,21 @@ export async function hostedAcceptance(
       'Verified customer differs from fixture',
     );
     if (!current.runId) {
+      const existing = rows.parse(
+        await call(
+          `${prefix}/tickets/${current.ticketId}/investigations?page=1&limit=100`,
+        ),
+      );
+      check(
+        existing.length <= 1,
+        'Ambiguous existing investigations; review the acceptance state',
+      );
+      if (existing[0]) {
+        current.runId = z.uuid().parse(existing[0].id);
+        await save();
+      }
+    }
+    if (!current.runId) {
       const admission = record.parse(
         await call(`${prefix}/tickets/${current.ticketId}/investigations`, {
           method: 'POST',
@@ -422,6 +443,25 @@ export async function hostedAcceptance(
       'Real Gemini model evidence missing',
     );
     const proposal = record.parse(run.proposal);
+    if (!current.actionId) {
+      const existing = rows.parse(
+        await call(
+          `${prefix}/tickets/${current.ticketId}/actions?page=1&limit=100`,
+        ),
+      );
+      check(
+        existing.length <= 1,
+        'Ambiguous existing actions; review the acceptance state',
+      );
+      if (existing[0]) {
+        check(
+          existing[0].proposalId === proposal.id,
+          'Existing action belongs to another proposal',
+        );
+        current.actionId = z.uuid().parse(existing[0].id);
+        await save();
+      }
+    }
     if (!current.actionId) {
       verifyReadyProposal(proposal, item.type);
       await approve(
@@ -454,6 +494,10 @@ export async function hostedAcceptance(
     const action = await poll(
       `${prefix}/actions/${current.actionId}`,
       (a) => a.status === 'SUCCEEDED',
+    );
+    check(
+      action.type === item.type && action.proposalId === proposal.id,
+      'Action does not match the expected case and proposal',
     );
     const context = await call(
       `${prefix}/customers/${customerId}/account-context`,
