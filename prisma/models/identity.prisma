@@ -40,6 +40,8 @@ model Workspace {
   idempotency               IdempotencyRecord[]
   audit                     AuditEvent[]
   outbox                    OutboxEvent[]
+  knowledge                 KnowledgeDocument[]
+  actions                   ActionExecution[]
 
   @@schema("handled")
 }

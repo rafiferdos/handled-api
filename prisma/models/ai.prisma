@@ -18,6 +18,8 @@ model InvestigationRun {
   version                 Int                 @default(1)
   createdAt               DateTime            @default(now()) @db.Timestamptz(3)
   updatedAt               DateTime            @updatedAt @db.Timestamptz(3)
+  ticketVersion           Int                 @default(1)
+  usage                   Json                @default("{}")
   workspace               Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
   ticket                  Ticket              @relation(fields: [workspaceId, ticketId], references: [workspaceId, id], onDelete: Restrict)
   triggeredBy             Profile             @relation(fields: [triggeredByUserId], references: [id], onDelete: Restrict)
@@ -79,9 +81,11 @@ model Proposal {
   investigation         InvestigationRun  @relation(fields: [workspaceId, ticketId, investigationId], references: [workspaceId, ticketId, id], onDelete: Restrict)
   sources               ProposalSource[]
   decision              ProposalDecision?
+  actions               ActionExecution[]
 
   @@unique([workspaceId, id])
   @@unique([workspaceId, id, version])
+  @@unique([workspaceId, ticketId, id, version])
   @@unique([workspaceId, investigationId, version])
   @@index([workspaceId, ticketId, createdAt(sort: Desc), id])
   @@index([workspaceId, ticketId, investigationId])
@@ -127,9 +131,11 @@ model ProposalDecision {
   proposal          Proposal             @relation(fields: [workspaceId, proposalId, proposalVersion], references: [workspaceId, id, version], onDelete: Restrict)
   actor             Profile              @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
   membership        Membership           @relation(fields: [workspaceId, actorMembershipId, actorUserId], references: [workspaceId, id, userId], onDelete: Restrict)
+  action            ActionExecution?
 
   @@unique([workspaceId, id])
   @@unique([workspaceId, proposalId, proposalVersion])
+  @@unique([workspaceId, id, proposalId, proposalVersion])
   @@index([actorUserId])
   @@index([workspaceId, actorMembershipId, actorUserId])
   @@schema("handled")

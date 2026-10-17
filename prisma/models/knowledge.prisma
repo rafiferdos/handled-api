@@ -1,4 +1,60 @@
-// Owner slot: Person C. Planned models: KnowledgeDocument, KnowledgeChunk, KnowledgeGap.
-// Starter: no business models implemented. Add schema through an owner-reviewed PR.
-// Every tenant model needs workspaceId and same-workspace constraints.
-// Coordinate cross-domain relations and migrations; see docs/ownership.md.
+model KnowledgeDocument {
+  id               String                  @id @default(uuid()) @db.Uuid
+  workspaceId      String                  @db.Uuid
+  slug             String                  @db.VarChar(100)
+  title            String                  @db.VarChar(256)
+  body             String                  @db.Text
+  policyRules      Json                    @default("{}")
+  status           KnowledgeDocumentStatus @default(DRAFT)
+  version          Int                     @default(1)
+  publishedVersion Int?
+  createdAt        DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                @updatedAt @db.Timestamptz(3)
+  workspace        Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  revisions        KnowledgeRevision[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, slug])
+  @@index([workspaceId, status, updatedAt, id])
+  @@schema("handled")
+}
+
+model KnowledgeRevision {
+  id             String            @id @default(uuid()) @db.Uuid
+  workspaceId    String            @db.Uuid
+  documentId     String            @db.Uuid
+  version        Int
+  title          String            @db.VarChar(256)
+  body           String            @db.Text
+  contentHash    String            @db.Char(64)
+  policyRules    Json
+  indexStatus    String            @default("PENDING") @db.VarChar(16)
+  embeddingModel String?           @db.VarChar(100)
+  failureCode    String?           @db.VarChar(64)
+  publishedAt    DateTime          @default(now()) @db.Timestamptz(3)
+  document       KnowledgeDocument @relation(fields: [workspaceId, documentId], references: [workspaceId, id], onDelete: Restrict)
+  chunks         KnowledgeChunk[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, documentId, version])
+  @@schema("handled")
+}
+
+model KnowledgeChunk {
+  id              String                                @id @default(uuid()) @db.Uuid
+  workspaceId     String                                @db.Uuid
+  documentId      String                                @db.Uuid
+  documentVersion Int
+  chunkIndex      Int
+  content         String                                @db.Text
+  contentHash     String                                @db.Char(64)
+  embeddingModel  String                                @db.VarChar(100)
+  embedding       Unsupported("extensions.vector(768)")
+  createdAt       DateTime                              @default(now()) @db.Timestamptz(3)
+  revision        KnowledgeRevision                     @relation(fields: [workspaceId, documentId, documentVersion], references: [workspaceId, documentId, version], onDelete: Restrict)
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, documentId, documentVersion, embeddingModel, chunkIndex])
+  @@index([workspaceId, documentId, documentVersion])
+  @@schema("handled")
+}

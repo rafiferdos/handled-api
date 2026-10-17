@@ -1,4 +1,4 @@
-// Real transactional audit/outbox foundation. ActionExecution follows Step 9.
+// Transactional operations and simulated external business effects.
 model AuditEvent {
   id          String         @id @default(uuid()) @db.Uuid
   workspaceId String         @db.Uuid
@@ -52,5 +52,39 @@ model IdempotencyRecord {
 
   @@unique([workspaceId, actorScope, operation, target, key])
   @@index([workspaceId, createdAt])
+  @@schema("handled")
+}
+
+model ActionExecution {
+  id              String                @id @default(uuid()) @db.Uuid
+  workspaceId     String                @db.Uuid
+  ticketId        String                @db.Uuid
+  proposalId      String                @db.Uuid
+  proposalVersion Int
+  decisionId      String                @db.Uuid
+  type            ActionType
+  targetId        String                @db.Uuid
+  targetRef       String                @db.VarChar(256)
+  status          ActionExecutionStatus @default(QUEUED)
+  attempts        Int                   @default(0)
+  version         Int                   @default(1)
+  beforeState     Json?
+  afterState      Json?
+  failureCode     String?               @db.VarChar(64)
+  retryable       Boolean               @default(false)
+  requestId       String                @db.VarChar(128)
+  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime              @updatedAt @db.Timestamptz(3)
+  finishedAt      DateTime?             @db.Timestamptz(3)
+  workspace       Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  proposal        Proposal              @relation(fields: [workspaceId, ticketId, proposalId, proposalVersion], references: [workspaceId, ticketId, id, version], onDelete: Restrict)
+  decision        ProposalDecision      @relation(fields: [workspaceId, decisionId, proposalId, proposalVersion], references: [workspaceId, id, proposalId, proposalVersion], onDelete: Restrict)
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, decisionId])
+  @@unique([workspaceId, decisionId, proposalId, proposalVersion])
+  @@unique([workspaceId, proposalId, proposalVersion])
+  @@index([workspaceId, ticketId, createdAt, id])
+  @@index([workspaceId, status, createdAt, id])
   @@schema("handled")
 }
