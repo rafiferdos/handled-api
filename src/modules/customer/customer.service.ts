@@ -44,7 +44,7 @@ export class CustomerService {
   constructor(@Inject(UnitOfWork) private readonly uow: UnitOfWork) {}
   async create(actor: WorkspaceActor, input: CreateCustomerDto) {
     try {
-      return await this.uow.run(async (tx) => {
+      return await this.uow.runAs(actor, async (tx) => {
         await assertWorkspaceActor(tx, actor, WRITERS);
         const customer = await tx.customer.create({
           data: {
@@ -67,7 +67,7 @@ export class CustomerService {
     }
   }
   list(actor: WorkspaceActor, query: CustomerQueryDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       const where: Prisma.CustomerWhereInput = {
         workspaceId: actor.workspaceId,
@@ -97,13 +97,13 @@ export class CustomerService {
     });
   }
   detail(actor: WorkspaceActor, id: string) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       return requireCustomer(tx, actor.workspaceId, id);
     });
   }
   update(actor: WorkspaceActor, id: string, input: UpdateCustomerDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, WRITERS);
       await requireCustomer(tx, actor.workspaceId, id);
       const result = await tx.customer.updateMany({

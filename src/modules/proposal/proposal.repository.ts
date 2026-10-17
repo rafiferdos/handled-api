@@ -1,3 +1,5 @@
+import { assertTransactionIdentity } from '../../common/database/identity-transaction.js';
+import type { IdentityTransaction } from '../../common/database/identity-transaction.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { Prisma } from '../../generated/prisma/client.js';
@@ -117,7 +119,7 @@ export class ProposalRepository {
     sources: unknown,
   ) {
     try {
-      return await this.uow.run((tx) =>
+      return await this.uow.runAs(actor, (tx) =>
         this.createInTransaction(tx, actor, ticketId, runId, output, sources),
       );
     } catch (error) {
@@ -125,13 +127,14 @@ export class ProposalRepository {
     }
   }
   async createInTransaction(
-    tx: Prisma.TransactionClient,
+    tx: IdentityTransaction,
     actor: WorkspaceActor,
     ticketId: string,
     runId: string,
     output: unknown,
     sources: unknown,
   ) {
+    assertTransactionIdentity(tx, actor);
     await assertWorkspaceActor(tx, actor, WRITERS);
     const content = parseContract(proposalOutputSchema, output),
       evidence = parseContract(sourcesSchema, sources);
@@ -150,7 +153,7 @@ export class ProposalRepository {
     return this.persist(tx, actor, ticketId, run.id, 1, content, evidence);
   }
   read(actor: WorkspaceActor, id: string) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       const p = await stored(tx, actor.workspaceId, id);
       return project(p, await sourceRows(tx, p));
@@ -158,7 +161,7 @@ export class ProposalRepository {
   }
   revise(actor: WorkspaceActor, id: string, input: z.input<typeof editSchema>) {
     const data = parseContract(editSchema, input);
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       const member = await assertWorkspaceActor(tx, actor, WRITERS);
       const old = await stored(tx, actor.workspaceId, id);
       if (
@@ -215,11 +218,12 @@ export class ProposalRepository {
   /** Internal persistence only. The caller must perform policy/current-ticket
    * admission and write any action/outbox in this SAME transaction (Step 9). */
   async recordDecision(
-    tx: Prisma.TransactionClient,
+    tx: IdentityTransaction,
     actor: WorkspaceActor,
     id: string,
     input: z.input<typeof decisionSchema>,
   ) {
+    assertTransactionIdentity(tx, actor);
     const data = parseContract(decisionSchema, input);
     const member = await assertWorkspaceActor(tx, actor, WRITERS);
     const p = await stored(tx, actor.workspaceId, id);

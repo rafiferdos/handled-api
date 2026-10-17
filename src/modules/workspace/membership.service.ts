@@ -34,7 +34,7 @@ const project = (member: {
 export class MembershipService {
   constructor(@Inject(UnitOfWork) private readonly uow: UnitOfWork) {}
   list(actor: WorkspaceActor, query: PaginationQueryDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       const where = { workspaceId: actor.workspaceId };
       const data = await tx.membership.findMany({
@@ -51,7 +51,7 @@ export class MembershipService {
     });
   }
   update(actor: WorkspaceActor, id: string, input: UpdateMemberDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, [WorkspaceRole.ADMIN]);
       if (input.role === undefined && input.status === undefined)
         throw new AppException('VALIDATION_ERROR');

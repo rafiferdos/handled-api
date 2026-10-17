@@ -35,7 +35,7 @@ export class WorkspaceService {
     requestId = 'workspace-create',
   ) {
     try {
-      return await this.uow.run(async (tx) => {
+      return await this.uow.runAs(identity, async (tx) => {
         const user = await assertIdentity(tx, identity);
         if (
           !(await tx.profile.findUnique({
@@ -71,7 +71,7 @@ export class WorkspaceService {
     }
   }
   list(identity: VerifiedIdentity, query: PaginationQueryDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(identity, async (tx) => {
       await assertIdentity(tx, identity);
       const where = {
         status: 'ACTIVE' as const,
@@ -89,7 +89,7 @@ export class WorkspaceService {
     });
   }
   detail(actor: WorkspaceActor) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       return tx.workspace.findUniqueOrThrow({
         where: { id: actor.workspaceId },
@@ -98,7 +98,7 @@ export class WorkspaceService {
     });
   }
   update(actor: WorkspaceActor, input: UpdateWorkspaceDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, [WorkspaceRole.ADMIN]);
       const result = await tx.workspace.updateMany({
         where: { id: actor.workspaceId, version: input.expectedVersion },

@@ -2,7 +2,7 @@
 
 Immutable Proposal/Source revisions and exact-version ProposalDecision persistence.
 
-Step 2 implements `ProposalRepository` validates structured output, copies immutable snapshots on edit and records decisions in a caller-owned transaction. The coordinator must still verify current ticket/run/target/policy and create action/outbox atomically.
+Step 2 implements `ProposalRepository` validates structured output, copies immutable snapshots on edit and records decisions in a caller-owned `IdentityTransaction` from `UnitOfWork.runAs`. The coordinator must still verify current ticket/run/target/policy and create action/outbox atomically.
 
 No public approval/action shortcut exists. Real source resolution and policy/action admission follow their numbered steps.
 

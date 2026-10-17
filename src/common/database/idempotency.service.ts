@@ -46,12 +46,15 @@ export class IdempotencyService {
       if (previous) {
         if (previous.requestHash !== requestHash)
           throw new AppException('IDEMPOTENCY_CONFLICT');
-        return schema.parse(previous.response);
+        const result = schema.parse(previous.response);
+        await authorize(tx);
+        return result;
       }
       const result = schema.parse(await work(tx));
       await tx.idempotencyRecord.create({
         data: { ...scope, requestHash, response: result },
       });
+      await authorize(tx);
       return result;
     }, 'ReadCommitted');
   }

@@ -17,7 +17,7 @@ import {
 export class BillingReadService {
   constructor(@Inject(UnitOfWork) private readonly uow: UnitOfWork) {}
   context(actor: WorkspaceActor, customerId: string) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       const customer = await requireCustomer(
         tx,

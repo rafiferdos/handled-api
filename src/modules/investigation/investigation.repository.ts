@@ -1,3 +1,5 @@
+import { assertTransactionIdentity } from '../../common/database/identity-transaction.js';
+import type { IdentityTransaction } from '../../common/database/identity-transaction.js';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   Prisma,
@@ -78,7 +80,7 @@ export class InvestigationRepository {
   constructor(@Inject(UnitOfWork) private readonly uow: UnitOfWork) {}
   async create(actor: WorkspaceActor, ticketId: string, input: RunInput) {
     try {
-      return await this.uow.run((tx) =>
+      return await this.uow.runAs(actor, (tx) =>
         this.createInTransaction(tx, actor, ticketId, input),
       );
     } catch (error) {
@@ -87,11 +89,12 @@ export class InvestigationRepository {
   }
   /** Future queue coordinator composes admission and outbox in its transaction. */
   async createInTransaction(
-    tx: Prisma.TransactionClient,
+    tx: IdentityTransaction,
     actor: WorkspaceActor,
     ticketId: string,
     input: RunInput,
   ) {
+    assertTransactionIdentity(tx, actor);
     const data = parseContract(runInputSchema, input);
     const member = await assertWorkspaceActor(tx, actor, WRITERS);
     const ticket = await requireTicket(tx, actor.workspaceId, ticketId);
@@ -134,7 +137,7 @@ export class InvestigationRepository {
     return runProjection(run);
   }
   read(actor: WorkspaceActor, id: string) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       const run = await requireRun(tx, actor.workspaceId, id);
       const steps = await tx.investigationStep.findMany({
@@ -146,7 +149,7 @@ export class InvestigationRepository {
     });
   }
   list(actor: WorkspaceActor, ticketId: string, query: PaginationQueryDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       await requireTicket(tx, actor.workspaceId, ticketId);
       const where = { workspaceId: actor.workspaceId, ticketId };
@@ -165,7 +168,7 @@ export class InvestigationRepository {
   }
   transition(actor: WorkspaceActor, id: string, input: RunTransition) {
     const data = parseContract(runTransitionSchema, input);
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, WRITERS);
       const run = await requireRun(tx, actor.workspaceId, id);
       const allowed: readonly string[] = investigationTransitions[run.status];
@@ -207,7 +210,7 @@ export class InvestigationRepository {
   async recordStep(actor: WorkspaceActor, id: string, input: StepInput) {
     const data = parseContract(stepInputSchema, input);
     try {
-      return await this.uow.run(async (tx) => {
+      return await this.uow.runAs(actor, async (tx) => {
         await assertWorkspaceActor(tx, actor, WRITERS);
         const run = await requireRun(tx, actor.workspaceId, id);
         if (run.status !== 'RUNNING')
@@ -239,7 +242,7 @@ export class InvestigationRepository {
     input: FinishStepInput,
   ) {
     const data = parseContract(finishStepSchema, input);
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, WRITERS);
       const run = await requireRun(tx, actor.workspaceId, id);
       if (run.status !== 'RUNNING')
@@ -272,7 +275,7 @@ export class InvestigationRepository {
     id: string,
     input: Omit<RunInput, 'parentRunId'>,
   ) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, WRITERS);
       const run = await requireRun(tx, actor.workspaceId, id);
       return this.createInTransaction(tx, actor, run.ticketId, {

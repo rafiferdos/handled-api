@@ -30,7 +30,7 @@ export class InvitationService {
   constructor(@Inject(UnitOfWork) private readonly uow: UnitOfWork) {}
   create(actor: WorkspaceActor, input: CreateInviteDto) {
     const token = randomBytes(32).toString('base64url');
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       const member = await assertWorkspaceActor(tx, actor, [
         WorkspaceRole.ADMIN,
       ]);
@@ -76,7 +76,7 @@ export class InvitationService {
     });
   }
   list(actor: WorkspaceActor, query: PaginationQueryDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, [WorkspaceRole.ADMIN]);
       const where = { workspaceId: actor.workspaceId };
       return paginated(
@@ -92,7 +92,7 @@ export class InvitationService {
     });
   }
   revoke(actor: WorkspaceActor, id: string) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, [WorkspaceRole.ADMIN]);
       const invite = await tx.invite.findUnique({
         where: { workspaceId_id: { workspaceId: actor.workspaceId, id } },
@@ -121,9 +121,9 @@ export class InvitationService {
   ) {
     if (!/^[A-Za-z0-9_-]{43}$/.test(token))
       throw new AppException('VALIDATION_ERROR');
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(identity, async (tx) => {
       const user = await assertIdentity(tx, identity);
-      const invite = await tx.invite.findUnique({
+      let invite = await tx.invite.findUnique({
         where: { tokenHash: sha256(token) },
       });
       if (!invite) throw new AppException('RESOURCE_NOT_FOUND');
@@ -131,6 +131,11 @@ export class InvitationService {
         Array<{ id: string }>
       >`SELECT id FROM handled."Workspace" WHERE id=${invite.workspaceId}::uuid AND status='ACTIVE' FOR UPDATE`;
       if (!ws[0]) throw new AppException('RESOURCE_NOT_FOUND');
+      invite = await tx.invite.findUnique({
+        where: { tokenHash: sha256(token) },
+      });
+      if (!invite) throw new AppException('RESOURCE_NOT_FOUND');
+      await assertIdentity(tx, identity);
       if (
         invite.acceptedAt ||
         invite.revokedAt ||

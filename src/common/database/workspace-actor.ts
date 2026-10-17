@@ -52,6 +52,7 @@ export async function assertWorkspaceActor(
     Array<{ id: string }>
   >`SELECT id FROM handled."Workspace" WHERE id = ${actor.workspaceId}::uuid AND status = 'ACTIVE' FOR UPDATE`;
   if (!workspaces[0]) throw new AppException('RESOURCE_NOT_FOUND');
+  await assertIdentity(tx, actor);
   const member = await tx.membership.findUnique({
     where: {
       workspaceId_userId: {

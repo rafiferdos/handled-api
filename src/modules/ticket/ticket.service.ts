@@ -102,7 +102,7 @@ export class TicketService {
     );
   }
   list(actor: WorkspaceActor, query: TicketQueryDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       const where: Prisma.TicketWhereInput = {
         workspaceId: actor.workspaceId,
@@ -133,13 +133,13 @@ export class TicketService {
     });
   }
   detail(actor: WorkspaceActor, id: string) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       return requireTicket(tx, actor.workspaceId, id);
     });
   }
   update(actor: WorkspaceActor, id: string, input: UpdateTicketDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, WRITERS);
       await requireTicket(tx, actor.workspaceId, id);
       await this.updateVersion(tx, actor, id, input.expectedVersion, {
@@ -156,7 +156,7 @@ export class TicketService {
     });
   }
   messages(actor: WorkspaceActor, id: string, query: PaginationQueryDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor);
       await requireTicket(tx, actor.workspaceId, id);
       const where = { workspaceId: actor.workspaceId, ticketId: id };
@@ -180,7 +180,7 @@ export class TicketService {
     });
   }
   addMessage(actor: WorkspaceActor, id: string, input: AddMessageDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       const member = await assertWorkspaceActor(tx, actor, WRITERS);
       const ticket = await requireTicket(tx, actor.workspaceId, id);
       if (ticket.status === 'CLOSED')
@@ -215,7 +215,7 @@ export class TicketService {
     });
   }
   assign(actor: WorkspaceActor, id: string, input: AssignTicketDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, WRITERS);
       await requireTicket(tx, actor.workspaceId, id);
       if (input.assigneeId) {
@@ -243,7 +243,7 @@ export class TicketService {
     });
   }
   linkCustomer(actor: WorkspaceActor, id: string, input: LinkCustomerDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       const member = await assertWorkspaceActor(tx, actor, WRITERS);
       const ticket = await requireTicket(tx, actor.workspaceId, id);
       if (
@@ -285,7 +285,7 @@ export class TicketService {
     id: string,
     input: ManualTicketStatusDto,
   ) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, WRITERS);
       await this.states.transition(
         tx,

@@ -40,10 +40,15 @@ HS256 project to asymmetric keys before enabling this resolver.
 
 JWT signature, issuer, audience, expiry, subject and session UUID are verified.
 Fresh identity requires the matching current `auth.sessions` row, a verified
-email, no deleted/banned account and a nonexpired `not_after`. Mutations check
-identity again and take session/account locks until transaction completion;
+email, no deleted/banned account and a nonexpired `not_after`. Mutations use `UnitOfWork.runAs`, check identity again before commit and take
+session/account locks until transaction completion;
 logout/revocation before admission is rejected. Membership and active workspace
-are checked in the same transaction. JWT metadata never supplies roles.
+are checked in the same transaction. Domain transactions use ReadCommitted with
+a workspace lock acquired before membership/eligibility reads, plus version CAS
+and SQL constraints. A pre-lock Serializable snapshot must not authorize a
+post-lock mutation. All new scoped writers must follow this lock ordering.
+Caller-owned Lead writers require an `IdentityTransaction` produced by `runAs`;
+type and runtime binding prevent skipping the commit-time identity guard. JWT metadata never supplies roles.
 
 `handled.active_identity(uuid, uuid)` is a private `SECURITY DEFINER` function,
 with fully qualified managed tables, fixed `search_path`, no dynamic SQL and no

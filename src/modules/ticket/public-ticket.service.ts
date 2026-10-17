@@ -41,7 +41,7 @@ export class PublicTicketService {
   issueToken(actor: WorkspaceActor, input: IssueFormTokenDto) {
     const token = randomBytes(32).toString('base64url');
     const hash = this.digest(token);
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, [WorkspaceRole.ADMIN]);
       const expiresAt = new Date(Date.now() + input.expiresInHours * 3600000);
       await tx.workspace.update({

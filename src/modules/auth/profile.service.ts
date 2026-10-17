@@ -15,7 +15,7 @@ export const profileSelect = {
 export class ProfileService {
   constructor(@Inject(UnitOfWork) private readonly uow: UnitOfWork) {}
   bootstrap(identity: VerifiedIdentity, input: BootstrapProfileDto) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(identity, async (tx) => {
       const trusted = await assertIdentity(tx, identity);
       return tx.profile.upsert({
         where: { id: trusted.id },
@@ -35,7 +35,7 @@ export class ProfileService {
     });
   }
   read(identity: VerifiedIdentity) {
-    return this.uow.run(async (tx) => {
+    return this.uow.runAs(identity, async (tx) => {
       const trusted = await assertIdentity(tx, identity);
       const profile = await tx.profile.findUnique({
         where: { id: trusted.id },

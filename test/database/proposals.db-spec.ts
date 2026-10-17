@@ -100,7 +100,7 @@ it('makes edits new immutable revisions and rejects stale/concurrent edits and d
   expect(current.id).not.toBe(p.id);
   expect(current.version).toBe(2);
   await expect(
-    uow.run((tx) =>
+    uow.runAs(f.actor, (tx) =>
       proposals.recordDecision(tx, f.actor, p.id, {
         expectedVersion: 1,
         kind: 'REJECTED',
@@ -109,7 +109,7 @@ it('makes edits new immutable revisions and rejects stale/concurrent edits and d
     ),
   ).rejects.toMatchObject({ code: 'PROPOSAL_VERSION_CONFLICT' });
   await expect(
-    uow.run((tx) =>
+    uow.runAs(f.actor, (tx) =>
       proposals.recordDecision(tx, f.actor, current.id, {
         expectedVersion: 1,
         kind: 'REJECTED',
@@ -117,7 +117,7 @@ it('makes edits new immutable revisions and rejects stale/concurrent edits and d
       }),
     ),
   ).rejects.toMatchObject({ code: 'PROPOSAL_VERSION_CONFLICT' });
-  const decision = await uow.run((tx) =>
+  const decision = await uow.runAs(f.actor, (tx) =>
     proposals.recordDecision(tx, f.actor, current.id, {
       expectedVersion: 2,
       kind: 'REJECTED',
@@ -132,7 +132,7 @@ it('makes edits new immutable revisions and rejects stale/concurrent edits and d
   });
   expect((await proposals.read(f.actor, current.id)).status).toBe('REJECTED');
   await expect(
-    uow.run((tx) =>
+    uow.runAs(f.actor, (tx) =>
       proposals.recordDecision(tx, f.actor, current.id, {
         expectedVersion: 2,
         kind: 'APPROVED',
@@ -144,7 +144,7 @@ it('rolls back a decision and lifecycle metadata when its caller transaction fai
   const f = await fixture();
   const p = await proposals.create(f.actor, f.ticket.id, f.run.id, output, []);
   await expect(
-    uow.run(async (tx) => {
+    uow.runAs(f.actor, async (tx) => {
       await proposals.recordDecision(tx, f.actor, p.id, {
         expectedVersion: 1,
         kind: 'ESCALATED',
@@ -196,4 +196,34 @@ it('copies exact evidence snapshots to new revisions and prevents source overwri
     }),
   ).rejects.toMatchObject({ code: 'P2039' });
   expect((await proposals.read(f.actor, p.id)).sources).toEqual([source]);
+});
+
+it('rolls back an already-written decision if its caller identity expires before commit', async () => {
+  const f = await fixture();
+  const p = await proposals.create(f.actor, f.ticket.id, f.run.id, output, []);
+  f.actor.expiresAt = Math.floor(Date.now() / 1000) + 2;
+  await expect(
+    uow.runAs(f.actor, async (tx) => {
+      await proposals.recordDecision(tx, f.actor, p.id, {
+        expectedVersion: 1,
+        kind: 'REJECTED',
+        reason: 'Human review',
+      });
+      await new Promise((resolve) =>
+        setTimeout(
+          resolve,
+          Math.max(0, f.actor.expiresAt * 1000 - Date.now() + 30),
+        ),
+      );
+    }),
+  ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+  expect(
+    (await db.prisma.proposal.findUniqueOrThrow({ where: { id: p.id } }))
+      .status,
+  ).toBe('READY');
+  expect(
+    await db.prisma.proposalDecision.count({
+      where: { workspaceId: f.actor.workspaceId },
+    }),
+  ).toBe(0);
 });
