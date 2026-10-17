@@ -1,31 +1,46 @@
 # Hosted backend deployment handoff — 18 October 2026, Asia/Dhaka
 
-## Connected-session continuation
+## Current free-preview continuation
 
-Render resource tools are now available and authenticated. The user confirmed
-`My Workspace` (`tea-db390a7lot8c73f11180`). Live inspection confirms the existing
-API is still Free/Singapore/`development`, with live commit `e563515`; no worker
-or Key Value instance exists. Remote `testing` remains `75d331b`.
+User requires everything free and explicitly approved API + BullMQ worker as
+separate Node processes within one sleeping Render Free web service. This
+supersedes the earlier USD24 proposal. No paid resource is authorized.
 
-The proposed [root Blueprint](../render.yaml) adopts that API and adds the separate
-worker and persistent private Redis in Singapore. Published compute is USD 24/month
-(7 API + 7 worker + 10 Redis), pending spending approval. No paid resource or
-cloud mutation has been performed. See [the rollout guide](render-deployment.md)
-for exact resources, secret wiring, database gates, access limits, and acceptance.
+Confirmed workspace: `My Workspace` (`tea-db390a7lot8c73f11180`). Existing API:
+`srv-db8gpj0m7kps73fq20ag`, Free/Singapore, previously development/e563515.
+Created `handled-redis` (`red-db9t72vbtjjs73cvr4o0`), Free/Singapore/noeviction,
+no persistence, external access disabled. The user completed official Render CLI
+authorization; private CLI state is under `/tmp/handled-render-auth`.
 
-Fresh read-only Supabase inspection still finds zero business tables, no migration
-history, no private identity function, and no vector extension. The configured
-runtime credential is privileged `postgres`; runtime role review remains required.
-The official Render CLI 2.29.0 is installed in `/tmp/handled-render-cli/render`,
-but its validation command requires CLI login. Connector OAuth works independently.
-The connector has no worker creation or Blueprint-apply tool, and browser inventory
-is empty. Use authorized CLI access or the prepared Dashboard flow for those steps.
+[PR #7](https://github.com/rafiferdos/handled-api/pull/7) targets `testing` and is
+being revised for the approved Free preview. The [Blueprint](../render.yaml)
+contains only Free API and Free Redis. `pnpm start:preview` supervises the
+existing API and worker child processes, stops both on failure or shutdown, and
+forces stuck children out before the Free host's 30-second shutdown deadline.
+The separate production commands remain available.
 
-`pnpm check` passed on Node 22.23.3 / pnpm 11.25.0, including 139 unit and 37 HTTP
-tests plus build; HTTP tests needed sandbox loopback permission. Final Blueprint
-official-schema validation passed, and read-only configuration review has no
-remaining findings. The real configured Gemini probe again returned
-`DEPENDENCY_TIMEOUT`. Hosted acceptance is still pending.
+The revised Blueprint passed authenticated Render validation. A Free service
+cannot configure `maxShutdownDelaySeconds`; that field was removed. Five real
+process-lifecycle tests failed before implementation/fixes and then passed.
+Final `pnpm check` passed: 144 unit/process and 37 HTTP tests, plus formatting,
+lint, strict types, and build. Read-only review has no remaining findings.
+
+Read-only Supabase inspection found zero business tables, no migration history,
+no private identity function, and no vector extension. A private schema-only
+pre-migration snapshot is at `/tmp/handled-premigration-schema.sql`. All five
+reviewed migrations are now applied: 22 business tables, vector in `extensions`,
+and the private identity function are verified. User explicitly approved
+`handled_render_preview` with BYPASSRLS and restricted business DML/function access;
+it is provisioned, has no direct managed-Auth privileges or postgres membership,
+and successfully read business data/called the function. Its credential remains
+private. The real Gemini probe again failed
+`DEPENDENCY_TIMEOUT`; hosted business/AI acceptance is pending.
+
+See [the Free rollout guide](render-deployment.md) for exact runtime settings,
+manual CLI/MCP application, free-tier limits, secret handling, and acceptance.
+The service sleeps after 15 idle minutes; Redis data can disappear on restart.
+Do not claim continuous worker operation. Account billing controls are not exposed
+by the available API; respect the user's zero-spend constraint.
 
 ## Historical checkpoint before resource tools loaded
 

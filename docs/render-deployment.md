@@ -1,80 +1,70 @@
-# Render hosted backend rollout
+# Free Render backend preview
 
-Prepared on **18 October 2026 (Asia/Dhaka)**. The deployment is pending; the
-Blueprint alone does not establish a running API, worker, or queue.
+The user approved **zero paid resources** on 18 October 2026 (Asia/Dhaka), and
+approved running the API and BullMQ worker as separate Node processes in one Free
+web service. This is a sleeping hosted preview, not a continuous worker host.
 
-## Verified workspace and current resources
+## Resources and limits
 
-The user confirmed **My Workspace**, `tea-db390a7lot8c73f11180`, through the
-connected Render tool. The existing `handled-api` service is
-`srv-db8gpj0m7kps73fq20ag`, Node runtime, Singapore, Free plan. Its linked branch
-is still `development`, and live deploy `dep-db8gpj8m7kps73fq2130` serves commit
-`e56351516d80d10df8eba8327b27b5ffc474dbf2`. No worker or Key Value instance exists.
+| Resource               | Render ID                      | Region           | Plan      |
+| ---------------------- | ------------------------------ | ---------------- | --------- |
+| Existing `handled-api` | `srv-db8gpj0m7kps73fq20ag`     | Singapore        | Free      |
+| New `handled-redis`    | `red-db9t72vbtjjs73cvr4o0`     | Singapore        | Free      |
+| Existing Supabase      | Project `ljtcdfyajgwqbbuntwoc` | Existing project | Unchanged |
 
-Remote `testing` is `75d331b13d54a1817df72d74cd9294a9cd3ad63d`, containing the
-merged backend core flows. Deploy the verified `testing` revision after this
-configuration is merged; redeploying the existing branch would retain old code.
+The confirmed Render workspace is `My Workspace`, `tea-db390a7lot8c73f11180`.
+No separate paid worker, paid Redis, compute upgrade, or workspace subscription
+is authorized. All resources in [render.yaml](../render.yaml) explicitly use
+`plan: free`. Never use a default compute plan when creating these resources.
 
-## Proposed resources and cost
+[Render Free limits](https://render.com/docs/free) include:
 
-| Resource         | Action                                                 | Compute plan | Published monthly baseline |
-| ---------------- | ------------------------------------------------------ | ------------ | -------------------------- |
-| `handled-api`    | Adopt the existing service; change source to `testing` | `0.5c-512mb` | USD 7                      |
-| `handled-worker` | Create a separate continuous BullMQ worker             | `0.5c-512mb` | USD 7                      |
-| `handled-redis`  | Create private persistent Key Value                    | `256mb`      | USD 10                     |
-| Total            | One instance of each                                   |              | **USD 24/month**           |
+- The web service sleeps after 15 minutes without inbound traffic. An API request
+  wakes the service and both processes; cold startup can take about a minute.
+- Jobs do not run while the service sleeps. There is no free continuous background
+  worker plan. Do not add artificial keep-alive traffic to imply continuity.
+- Free Redis is in memory only. Restart loses Redis state. Use `noeviction`,
+  `persistenceMode: off`, and `ipAllowList: []`; PostgreSQL outbox rows remain the
+  canonical work and effect record. Recovery after Redis loss still needs proof.
+- The workspace shares 750 Free web-service hours per month, including its other
+  existing Free services. It suspends Free services after exhausting those hours.
+- Free web services have no SSH/one-off jobs or configurable shutdown delay.
+- Build/bandwidth overages can be billed if the account has a payment method.
+  Keep the build spend limit at zero and stay within included bandwidth. The
+  public API/CLI used here does not expose account billing controls or payment
+  methods, so an account-wide zero-charge guarantee cannot be verified here.
 
-Prices were read from the live [Render pricing page](https://render.com/pricing)
-and plan IDs from the [compute reference](https://render.com/docs/compute-plans).
-This is resource compute only: usage overages, taxes, any existing workspace
-subscription, Supabase, and Gemini charges are separate. Account-specific billing
-and credits are not exposed by the connected tools. Recurring spend is pending
-user approval. A sleeping Free API would reduce compute to USD 17/month, but the
-prepared Blueprint keeps all three resources continuously available.
+## Runtime
 
-The flat Blueprint deliberately adopts the verified API by name without moving
-it into a new project/environment. All resources use Singapore and manual
-deploys. Redis uses `noeviction`, `journal-snapshot`, and `ipAllowList: []`.
-Both processes receive its internal URL through `fromService`; no localhost or
-external Redis URL is copied from `.env`. Paid journal persistence can lose the
-last second of writes on interruption; the PostgreSQL outbox remains canonical.
+`pnpm start:preview` starts `dist/preview.js`. It supervises the existing
+`dist/main.js` API and `dist/worker.js` worker as two child Node processes. A child
+failure stops its peer and exits nonzero so Render can restart the service.
+SIGTERM/SIGINT reach both children; after 25 seconds, unresponsive children are
+killed. This fits the Free service's default 30-second shutdown budget. A long
+investigation may be interrupted and must recover through the existing lease and
+outbox protocol after wake/restart.
 
-## Secret and database preparation
+The separate `pnpm start:prod` and `pnpm worker:prod` commands remain available.
+The API itself does not start a worker. `/ready` checks database connectivity;
+it does not prove provider or queue health. Node 22.23.3 and pnpm 11.25.0 are
+pinned; builds include development dependencies for Prisma/Nest. The Free preview
+uses database pool size 2 per process and investigation concurrency 1.
 
-Non-secret runtime settings are defined directly on both services. Existing
-service-level values take precedence over environment groups, so direct Blueprint
-values prevent preserved legacy API settings from shadowing the intended runtime.
-Node is pinned to 22.23.3; `packageManager` pins pnpm 11.25.0. Both builds include
-development dependencies for Prisma generation and Nest compilation. The API
-starts with `pnpm start:prod`, and the worker with `pnpm worker:prod`. The
-180-second shutdown window accommodates the existing 120-second investigation
-deadline and worker connection cleanup.
+Non-secret runtime values are specified directly on the service, so preserved
+legacy service settings cannot override an environment group. Secrets use
+`sync: false`; this only prompts during initial Blueprint creation, so existing
+service values must be explicitly merged. Redis uses its internal service URL.
+Never upload the local loopback Redis URL or the migration-owner database URL.
 
-Before applying the Blueprint, merge these API environment keys securely from
-the intended server configuration: `DATABASE_URL`, `SUPABASE_URL`,
-`GEMINI_API_KEY`, and exact hosted `CORS_ORIGINS`. The worker references the first
-three API variables. Preserve verified PostgreSQL TLS and the committed public
-CA at `prisma/certs/supabase-ca.crt`. Never commit credentials or place the
-migration-owner connection on the worker. Inspect existing auth override keys
-and ensure issuer/JWKS match the selected Supabase project.
+## Database and secrets
 
-`sync: false` only prompts during initial Blueprint creation and does not update
-existing services on later syncs. Explicitly merge secrets into the adopted API
-before Apply; do not assume a Blueprint will replace its existing credentials.
-Later secret rotations require updating the API and syncing the Blueprint to
-refresh the worker references.
+The deployment target was verified through PostgreSQL TLS with the committed CA.
+Before migrations, it contained zero business tables, no Prisma history, no
+private identity function, and no vector extension. A private schema-only snapshot
+is at `/tmp/handled-premigration-schema.sql` (mode 0600); no handled business data
+existed to export. This snapshot is local and is not a managed backup service.
 
-The configured target is Supabase project `ljtcdfyajgwqbbuntwoc`. Fresh read-only
-inspection found **zero handled business tables**, no Prisma history, no
-`handled.active_identity`, and no vector extension. TLS connectivity passed.
-The current runtime connection uses privileged `postgres` with BYPASSRLS; review
-and provision a restricted server credential before uploading it as runtime
-configuration. Follow [the foundation guide](backend-foundation-setup.md) for
-private identity ownership and runtime grants, and [the core guide](backend-core-setup.md)
-for vector placement and the complete five-migration history.
-
-Review the explicit target, backup/restore capability, migration ownership, and
-runtime grants; then apply the reviewed migrations using the migration connection:
+Use the existing reviewed five migrations with the migration-owner connection:
 
 ```bash
 pnpm db:validate
@@ -82,80 +72,71 @@ pnpm db:migrate:deploy
 pnpm exec prisma migrate status
 ```
 
-The Blueprint does not run shared-database DDL or seed Auth users automatically.
-Confirm 22 business tables, vector in `extensions`, the private identity function,
-runtime business access, and denial of browser-role business access before
-starting the worker. Do not reset, use `db push`, or run disposable DB tests on
-this target.
+Provision a separate server login with only required handled-table privileges,
+schema usage, reviewed RLS authority, and EXECUTE on
+`handled.active_identity(uuid,uuid)`. Its credential belongs on Render only.
+The private identity function stays owned by the migration role; runtime does not
+receive direct managed-Auth access. Confirm 22 business tables, vector in
+`extensions`, runtime access, and browser-role denial. Do not reset or use
+`db push` on this project. See the [foundation guide](backend-foundation-setup.md)
+and [core guide](backend-core-setup.md).
 
-The API generates a server-only support-form pepper. Public intake remains
-disabled with `PUBLIC_INTAKE_ORIGINS=""` until exact hosted origins and the
-Render reverse-proxy/client-IP policy have been reviewed. Configure those before
-claiming hosted public intake works. `ACTION_SIMULATION=true` remains mandatory.
+The explicitly user-approved runtime role is `handled_render_preview`, with LOGIN,
+BYPASSRLS, no superuser/role-creation/database-creation/replication privileges,
+USAGE on `handled` and `extensions`, SELECT/INSERT/UPDATE/DELETE on the existing
+22 business tables (excluding migration history), and EXECUTE on the private
+identity function. It receives no direct managed-Auth privileges or membership in
+`postgres`. A generated password is kept private and uploaded only to this API.
+The current application enforces tenant/role checks in its trusted backend;
+BYPASSRLS lets this server role pass the business tables' default-deny RLS.
+The actual login successfully read the business schema and called the identity
+function. Verification confirmed no managed-Auth SELECT/UPDATE, no postgres
+membership, no superuser/CREATE ROLE/CREATE DATABASE/replication, zero browser-role
+business grants, and no browser identity-function execution. All five reviewed
+migrations are applied; 22 business tables and vector in `extensions` are verified.
 
-## Validation and application
+Merge runtime `DATABASE_URL`, `SUPABASE_URL`, `GEMINI_API_KEY`, exact hosted
+`CORS_ORIGINS`, a server-only random `SUPPORT_FORM_TOKEN_PEPPER`, and the internal
+`REDIS_URL` into the existing API environment. Preserve unrelated environment
+keys. Keep verified TLS and the committed CA path. Do not print or commit secrets.
 
-Fresh local verification passed with Node 22.23.3 / pnpm 11.25.0:
-`pnpm check` completed formatting, type-aware lint, typecheck, 139 unit tests,
-37 isolated HTTP tests, and production build. HTTP tests require loopback
-permission in this sandbox. The final Blueprint passed the current official
-JSON Schema (draft 2020-12). Read-only configuration review found no remaining
-issues. These checks do not validate a live deployment.
+`PUBLIC_INTAKE_ORIGINS` stays empty pending review of the hosted form and reverse
+proxy/client-IP policy. Public intake is therefore disabled. The existing
+frontend origin can be allowed for authenticated browser calls without claiming
+that frontend integration is complete. `ACTION_SIMULATION=true` is mandatory.
 
-Render MCP is connected and supports resource inspection, web/Key Value creation,
-environment merging, and deploy monitoring. This session's tool inventory has no
-worker creation, service branch/plan update, Blueprint application, or billing
-operation. Browser inventory is empty.
+## Deploy and verify
 
-The checksum-verified official Render CLI 2.29.0 is available at
-`/tmp/handled-render-cli/render`. It has no CLI login or `RENDER_API_KEY`;
-connector OAuth does not authenticate the CLI. Authenticate with `render login`
-through the normal Render authorization flow, or use a securely supplied
-environment credential; never paste tokens into chat. Verify `render whoami`
-and `render workspace current` before mutations.
+The connected MCP tools can create Free Key Value, merge environment variables,
+trigger a deploy, and inspect logs. The user also completed official CLI
+2.29.0 authorization; CLI state is private under `/tmp/handled-render-auth`.
+Verify the selected workspace before changes. The CLI supports service branch,
+build, start, and plan updates. The root Blueprint records the intended settings;
+CLI/MCP changes must match it. No Blueprint-managed association is claimed until
+it is created through Render's Dashboard.
 
 ```bash
 render blueprints validate render.yaml \
   --workspace tea-db390a7lot8c73f11180 --output json
 ```
 
-Local validation against the current official JSON Schema can check structure;
-authenticated Render validation is still required to check live-resource conflicts
-and platform semantics. Cost approval does not remove the CLI/Dashboard access
-requirement.
+The revised Free Blueprint passed authenticated Render validation. Publish the
+reviewed feature PR into `testing`, update the existing API's branch/build/start
+settings, merge the required environment values, and trigger one deployment.
+Capture its ID, wait for `live`, and verify the actual source commit. Never
+redeploy the old `development` branch or create a duplicate API unnecessarily.
 
-After validation and the database gates, publish the feature PR into `testing`.
-Open [the Blueprint creation page](https://dashboard.render.com/blueprint/new?repo=https://github.com/rafiferdos/handled-api)
-in **My Workspace**, select **testing** as the Blueprint branch, and inspect the
-resource diff before Apply. It must update `srv-db8gpj0m7kps73fq20ag` and create
-only `handled-worker` and `handled-redis`. Stop if it proposes an extra API or a
-different workspace/region. Confirm
-the quoted plans before activating recurring charges.
+Verify `/health`, `/ready`, both child processes in logs, the private Redis
+connection, schema readiness, anonymous denial on real private routes, and worker
+restart/recovery. Five real child-process tests cover peer crash, signal forwarding,
+repeated signals at the actual entrypoint, and forced shutdown. The final
+`pnpm check` passed: 144 unit/process tests, 37 HTTP tests, types, lint, formatting,
+and production build. Independent review verified forced cleanup at 25 seconds
+with no surviving child PIDs and has no remaining findings.
 
-For later releases, with manual deployments enabled, confirm API and worker
-source revisions match and deploy each once. Capture the selected commit,
-resource IDs, and deploy IDs. Do not trigger redundant deployments if an
-automatic deployment has already started.
-
-## Hosted acceptance
-
-1. Wait for both deploys to become `live`; verify their actual commit IDs.
-2. Request the API `/health` and `/ready`. `/ready` verifies database connectivity
-   only; inspect worker logs and queue processing independently.
-3. Run the real synthetic Gemini probe from the hosted environment. The fresh
-   configured full probe again failed with `DEPENDENCY_TIMEOUT`; generation
-   remains unverified. Model listing and embedding success alone are insufficient.
-4. Use scoped verified Auth users and synthetic fixtures. Publish knowledge,
-   observe persisted indexed chunks, admit an investigation, and verify the worker
-   persists its real model result and citations.
-5. Approve a current proposal as a human; verify one simulated business effect,
-   action record, audit, and completed outbox record through REST refetch.
-6. Repeat the approval/idempotency request and restart/redeploy the worker with
-   in-flight work; verify recovery without duplicate effects and inspect logs.
-7. After public-intake configuration, exercise the hosted origin/form-token path
-   through persisted ticket and authenticated reads. Frontend acceptance remains
-   a separate gate.
-
-Retain failure evidence. A live deploy, 202 receipt, or Redis connection alone
-does not prove the hosted business flow. Application rollback does not reverse
-database migrations, queue deliveries, or business effects.
+The configured real Gemini probe currently fails `DEPENDENCY_TIMEOUT`.
+Generation, published policy indexing, investigation, human approval, simulated
+business effects, duplicate-effect prevention after hosted restart, and frontend
+acceptance remain separate gates until demonstrated. A live API or queue
+connection alone does not establish these outcomes. No paid provider plan is
+authorized by this deployment.
