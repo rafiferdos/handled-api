@@ -19,6 +19,7 @@
     "worker:prod": "node dist/worker.js",
     "ai:probe": "pnpm build && node dist/ai-tools.js probe",
     "ai:evaluate": "pnpm build && node dist/ai-tools.js evaluate",
+    "acceptance:hosted": "node --experimental-strip-types scripts/hosted-acceptance.ts",
     "lint": "oxlint --type-aware src/ test/",
     "test": "prisma generate && vitest run",
     "test:watch": "prisma generate && vitest",
