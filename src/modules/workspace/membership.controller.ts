@@ -31,6 +31,7 @@ import {
   MemberResponseDto,
   InviteResponseDto,
   IssuedInviteResponseDto,
+  AcceptedInviteResponseDto,
 } from './membership.dto.js';
 
 @ApiTags('Membership')
@@ -95,6 +96,7 @@ export class InviteAcceptController {
   ) {}
   @Post('accept')
   @HttpCode(200)
+  @ApiSuccessResponse(AcceptedInviteResponseDto)
   accept(
     @CurrentIdentity() identity: VerifiedIdentity,
     @Body() input: AcceptInviteDto,

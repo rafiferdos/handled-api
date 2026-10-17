@@ -14,5 +14,5 @@ export class BootstrapProfileDto {
 export class ProfileResponseDto {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty() email: string;
-  @ApiProperty({ nullable: true }) displayName: string | null;
+  @ApiProperty({ type: String, nullable: true }) displayName: string | null;
 }

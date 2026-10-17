@@ -14,6 +14,7 @@ import { WorkspaceScoped } from '../../common/decorators/access.decorator.js';
 import type { WorkspaceActor } from '../../common/database/workspace-actor.js';
 import { uuidPipe } from '../../common/dto/input.js';
 import { ApiSuccessResponse } from '../../common/decorators/api-success-response.decorator.js';
+import { AccountContextResponseDto } from '../billing/account-context.dto.js';
 import { BillingReadService } from '../billing/billing-read.service.js';
 import { CustomerService } from './customer.service.js';
 import {
@@ -57,7 +58,9 @@ export class CustomerController {
   ) {
     return this.customers.update(actor, id, input);
   }
-  @Get(':customerId/account-context') context(
+  @Get(':customerId/account-context')
+  @ApiSuccessResponse(AccountContextResponseDto)
+  context(
     @CurrentActor() actor: WorkspaceActor,
     @Param('customerId', uuidPipe) id: string,
   ) {

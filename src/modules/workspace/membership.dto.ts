@@ -35,19 +35,28 @@ export class MemberResponseDto {
   @ApiProperty({ enum: WorkspaceRole }) role: WorkspaceRole;
   @ApiProperty({ enum: MembershipStatus }) status: MembershipStatus;
   @ApiProperty() email: string;
-  @ApiProperty({ nullable: true }) displayName: string | null;
+  @ApiProperty({ type: String, nullable: true }) displayName: string | null;
 }
 export class InviteResponseDto {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty() email: string;
   @ApiProperty({ enum: WorkspaceRole }) role: WorkspaceRole;
   @ApiProperty({ format: 'date-time' }) expiresAt: Date;
-  @ApiProperty({ nullable: true, format: 'date-time' }) acceptedAt: Date | null;
-  @ApiProperty({ nullable: true, format: 'date-time' }) revokedAt: Date | null;
+  @ApiProperty({ type: String, nullable: true, format: 'date-time' })
+  acceptedAt: Date | null;
+  @ApiProperty({ type: String, nullable: true, format: 'date-time' })
+  revokedAt: Date | null;
 }
 export class IssuedInviteResponseDto extends InviteResponseDto {
   @ApiProperty({
     description: 'One-time delivery material; lists never return it.',
   })
   token: string;
+}
+
+export class AcceptedInviteResponseDto {
+  @ApiProperty({ format: 'uuid' }) id: string;
+  @ApiProperty({ format: 'uuid' }) workspaceId: string;
+  @ApiProperty({ enum: WorkspaceRole }) role: WorkspaceRole;
+  @ApiProperty({ enum: MembershipStatus }) status: MembershipStatus;
 }

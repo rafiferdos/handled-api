@@ -7,7 +7,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
   CurrentActor,
   CurrentIdentity,
@@ -50,12 +50,14 @@ export class WorkspaceController {
     return this.workspaces.list(identity, query);
   }
   @Get(':workspaceId')
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @WorkspaceScoped()
   @ApiSuccessResponse(WorkspaceResponseDto)
   detail(@CurrentActor() actor: WorkspaceActor) {
     return this.workspaces.detail(actor);
   }
   @Patch(':workspaceId')
+  @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @WorkspaceScoped()
   @ApiSuccessResponse(WorkspaceResponseDto)
   update(

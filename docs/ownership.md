@@ -37,7 +37,7 @@ Shared defaults already provide exceptions/error codes, DTO validation, response
 4. Commit the schema and generated migration together. Merge dependency migrations first, update feature branches from main, regenerate Prisma Client and run tests.
 5. Apply only reviewed committed migrations to shared environments with `pnpm db:migrate:deploy`. Never reset or use development schema commands against the shared database.
 
-The starter has **no business models, initial migrations or seed implementation**. Owner slots must implement those next; schema filenames/comments reserve ownership and do not prove tables exist. Supabase's managed auth schema stays outside application Prisma models.
+Step 2 supplies the 18-table business schema, migrations, real A/B dependencies, Lead repositories and explicit scoped fixtures. See [foundation setup](backend-foundation-setup.md). Supabase managed Auth tables stay outside application Prisma ownership; a private lookup function reads and locks their current identity rows.
 
 ## Consumer reviews
 

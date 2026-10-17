@@ -1,15 +1,12 @@
 # Proposal module
 
-Owner slot: **Team Lead**. Scope: Versioned Proposal/Source/Decision and human review.
+Immutable Proposal/Source revisions and exact-version ProposalDecision persistence.
 
-Jira entry points: SCRUM-20 / SCRUM-21 / SCRUM-22 / SCRUM-23. Confirm the current task and assignee in Jira before starting.
+Step 2 implements `ProposalRepository` validates structured output, copies immutable snapshots on edit and records decisions in a caller-owned transaction. The coordinator must still verify current ticket/run/target/policy and create action/outbox atomically.
 
-Schema file: `prisma/models/ai.prisma`. Models remain unimplemented in the starter.
+No public approval/action shortcut exists. Real source resolution and policy/action admission follow their numbered steps.
 
-Create immutable proposal versions; verify expectedVersion and current evidence. Pass approved commands to D through reviewed service contracts.
-
-Step 1 `contracts/` and `dto/` define the three-action allowlist, immutable evidence, exact-version requests and proposed server-only action handoff. Read the [Lead contract guide](../../../docs/lead-contracts.md) for safe no-action results, decision/idempotency semantics and pending consumer reviews. Schema validity never authorizes execution.
-
-Add controllers/services/DTOs and colocated unit tests here; register them in this module file. Existing module registration is already in `FeaturesModule`, so normal domain work does not require editing `main.ts` or `AppModule`. Export only explicit consumer services.
-
-Follow [ownership](../../../docs/ownership.md), [feature development](../../../docs/feature-development.md) and [contributor workflow](../../../CONTRIBUTING.md). HTTP controllers return domain data; shared infrastructure wraps responses and errors. These module notes do not mean the feature is implemented.
+See the [foundation setup/API guide](../../../docs/backend-foundation-setup.md),
+[numbered backend roadmap](../../../docs/solo-backend-steps.md) and real DB tests in
+`test/database`. A/B/C/D are retained module boundaries under the solo workflow.
+Only Lead Jira items receive delivery updates.

@@ -84,7 +84,7 @@ export class AddMessageDto {
   visibility?: MessageVisibility;
 }
 export class AssignTicketDto extends VersionDto {
-  @ApiProperty({ format: 'uuid', nullable: true })
+  @ApiProperty({ format: 'uuid', type: String, nullable: true })
   @ValidateIf((_o: unknown, v: unknown) => v !== null)
   @IsUUID()
   assigneeId: string | null;
@@ -116,17 +116,20 @@ export class TicketReceiptDto {
 }
 export class TicketResponseDto extends TicketReceiptDto {
   @ApiProperty() subject: string;
-  @ApiProperty({ enum: TicketCategory, nullable: true })
+  @ApiProperty({ enum: TicketCategory, type: String, nullable: true })
   category: TicketCategory | null;
   @ApiProperty({ enum: TicketPriority }) priority: TicketPriority;
-  @ApiProperty({ format: 'uuid', nullable: true }) customerId: string | null;
-  @ApiProperty({ format: 'date-time', nullable: true }) customerVerifiedAt:
+  @ApiProperty({ format: 'uuid', type: String, nullable: true }) customerId:
     string | null;
-  @ApiProperty({ format: 'uuid', nullable: true }) assigneeId: string | null;
+  @ApiProperty({ format: 'date-time', type: String, nullable: true })
+  customerVerifiedAt: string | null;
+  @ApiProperty({ format: 'uuid', type: String, nullable: true }) assigneeId:
+    string | null;
   @ApiProperty() version: number;
   @ApiProperty() source: string;
-  @ApiProperty({ nullable: true }) requesterEmail: string | null;
-  @ApiProperty({ nullable: true }) requesterCustomerRef: string | null;
+  @ApiProperty({ type: String, nullable: true }) requesterEmail: string | null;
+  @ApiProperty({ type: String, nullable: true }) requesterCustomerRef:
+    string | null;
   @ApiProperty({ format: 'date-time' }) createdAt: string;
   @ApiProperty({ format: 'date-time' }) updatedAt: string;
 }
@@ -134,7 +137,8 @@ export class MessageResponseDto {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty() authorType: string;
   @ApiProperty({ enum: MessageVisibility }) visibility: MessageVisibility;
-  @ApiProperty({ nullable: true, format: 'uuid' }) authorUserId: string | null;
+  @ApiProperty({ type: String, nullable: true, format: 'uuid' }) authorUserId:
+    string | null;
   @ApiProperty() body: string;
   @ApiProperty({ format: 'date-time' }) createdAt: string;
 }
