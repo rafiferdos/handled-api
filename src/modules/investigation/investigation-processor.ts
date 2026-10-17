@@ -15,7 +15,6 @@ import {
   classificationSchema,
   proposalOutputSchema,
 } from '../ai/contracts/proposal-output.schema.js';
-import type { Classification } from '../ai/contracts/proposal-output.schema.js';
 import { ReadTools } from '../ai/read-tools.js';
 import { validateProposalEvidence } from '../ai/evidence-policy.js';
 import type { EvidenceSource } from '../proposal/contracts/evidence.schema.js';
