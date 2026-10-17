@@ -13,9 +13,11 @@ no persistence, external access disabled. The user completed official Render CLI
 authorization; private CLI state is under `/tmp/handled-render-auth`.
 
 [PR #7](https://github.com/rafiferdos/handled-api/pull/7) is merged into `testing`.
-The live application commit is `8f0043396282fbaac024d05990b00c45060566a8`.
-Current deploy `dep-db9tdt2jnfac73dirdeg` is `live`; the earlier initial deploy
-`dep-db9tbh4s728c73cvakbg` also succeeded. API base is
+[PR #9](https://github.com/rafiferdos/handled-api/pull/9) merged the Gemini latency
+fix into `testing`. The live application commit is
+`9334b61ac54ca866b2eef5d683c6f9e0c6ac7240`; current deploy
+`dep-db9tnebncjis73akkib0` is `live`. Earlier infrastructure deploys
+`dep-db9tdt2jnfac73dirdeg` and `dep-db9tbh4s728c73cvakbg` also succeeded. API base is
 `https://handled-api-zv4h.onrender.com/api/v1`; `/health` and `/ready` return 200,
 and anonymous `/api/v1/workspaces` returns 401.
 
