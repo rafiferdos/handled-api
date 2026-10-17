@@ -305,7 +305,7 @@ export class InvestigationProcessor implements OnModuleInit {
     job: JobExecution,
     type: 'CLASSIFY' | 'TOOL' | 'RAG' | 'PROPOSE',
     label: string,
-    sourceRefs: string[],
+    sourceRefs: readonly string[],
     durationMs: number,
     toolName?: string,
   ) {
