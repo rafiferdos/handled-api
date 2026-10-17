@@ -20,6 +20,11 @@ it('seeds canonical cases repeatedly without resetting changed records or unrela
     .$executeRaw`UPDATE auth.users SET email=upper(email) WHERE id=${admin.userId}::uuid`;
   const first = await seedFixtures(db.prisma, input);
   expect(
+    await db.prisma.knowledgeDocument.count({
+      where: { workspaceId: input.workspaceId, status: 'DRAFT' },
+    }),
+  ).toBe(3);
+  expect(
     await db.prisma.ticket.count({ where: { workspaceId: input.workspaceId } }),
   ).toBe(3);
   expect(
