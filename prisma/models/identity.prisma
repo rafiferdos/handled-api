@@ -1,4 +1,92 @@
-// Owner slot: Person A. Planned models: Profile, Workspace, Membership, Invite.
-// Starter: no business models implemented. Add schema through an owner-reviewed PR.
-// Every tenant model needs workspaceId and same-workspace constraints.
-// Coordinate cross-domain relations and migrations; see docs/ownership.md.
+// Identity/workspace domain. Supabase's managed auth schema is not modelled here.
+model Profile {
+  id          String             @id @db.Uuid
+  email       String             @db.VarChar(320)
+  displayName String?            @db.VarChar(100)
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(3)
+  memberships Membership[]
+  messages    TicketMessage[]
+  runs        InvestigationRun[]
+  decisions   ProposalDecision[]
+
+  @@schema("handled")
+}
+
+model Workspace {
+  id                        String              @id @default(uuid()) @db.Uuid
+  slug                      String              @unique @db.VarChar(40)
+  name                      String              @db.VarChar(100)
+  status                    WorkspaceStatus     @default(ACTIVE)
+  supportFormTokenHash      String?             @db.Char(64)
+  supportFormTokenExpiresAt DateTime?           @db.Timestamptz(3)
+  ticketSequence            Int                 @default(1000)
+  version                   Int                 @default(1)
+  createdAt                 DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime            @updatedAt @db.Timestamptz(3)
+  memberships               Membership[]
+  invites                   Invite[]
+  customers                 Customer[]
+  subscriptions             Subscription[]
+  payments                  Payment[]
+  access                    ProductAccess[]
+  tickets                   Ticket[]
+  messages                  TicketMessage[]
+  runs                      InvestigationRun[]
+  steps                     InvestigationStep[]
+  proposals                 Proposal[]
+  sources                   ProposalSource[]
+  decisions                 ProposalDecision[]
+  idempotency               IdempotencyRecord[]
+  audit                     AuditEvent[]
+  outbox                    OutboxEvent[]
+
+  @@schema("handled")
+}
+
+model Membership {
+  id              String             @id @default(uuid()) @db.Uuid
+  workspaceId     String             @db.Uuid
+  userId          String             @db.Uuid
+  role            WorkspaceRole
+  status          MembershipStatus   @default(ACTIVE)
+  joinedAt        DateTime           @default(now()) @db.Timestamptz(3)
+  createdAt       DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @db.Timestamptz(3)
+  workspace       Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  user            Profile            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  invites         Invite[]
+  assignedTickets Ticket[]           @relation("TicketAssignee")
+  verifiedTickets Ticket[]           @relation("TicketVerifier")
+  messages        TicketMessage[]
+  runs            InvestigationRun[]
+  decisions       ProposalDecision[]
+
+  @@unique([workspaceId, userId])
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, id, userId])
+  @@index([userId, status])
+  @@index([workspaceId, role, status])
+  @@schema("handled")
+}
+
+model Invite {
+  id                    String        @id @default(uuid()) @db.Uuid
+  workspaceId           String        @db.Uuid
+  email                 String        @db.VarChar(320)
+  role                  WorkspaceRole
+  tokenHash             String        @unique @db.Char(64)
+  expiresAt             DateTime      @db.Timestamptz(3)
+  acceptedAt            DateTime?     @db.Timestamptz(3)
+  revokedAt             DateTime?     @db.Timestamptz(3)
+  createdByUserId       String        @db.Uuid
+  createdByMembershipId String        @db.Uuid
+  createdAt             DateTime      @default(now()) @db.Timestamptz(3)
+  workspace             Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  createdBy             Membership    @relation(fields: [workspaceId, createdByMembershipId, createdByUserId], references: [workspaceId, id, userId], onDelete: Restrict)
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, email, expiresAt])
+  @@index([workspaceId, createdByMembershipId, createdByUserId])
+  @@schema("handled")
+}

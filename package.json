@@ -21,6 +21,7 @@
     "test:cov": "prisma generate && vitest run --coverage",
     "test:debug": "prisma generate && vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "prisma generate && vitest run --config ./vitest.config.e2e.ts",
+    "test:db": "node scripts/test-database.mjs",
     "typecheck": "prisma generate && tsc --noEmit --incremental false",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build",
     "db:generate": "prisma generate",

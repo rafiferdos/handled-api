@@ -1,4 +1,56 @@
-// Owner slot: Person B. Planned models: Ticket, TicketMessage.
-// Starter: no business models implemented. Add schema through an owner-reviewed PR.
-// Every tenant model needs workspaceId and same-workspace constraints.
-// Coordinate cross-domain relations and migrations; see docs/ownership.md.
+model Ticket {
+  id                   String             @id @default(uuid()) @db.Uuid
+  workspaceId          String             @db.Uuid
+  reference            String             @db.VarChar(32)
+  customerId           String?            @db.Uuid
+  customerVerifiedAt   DateTime?          @db.Timestamptz(3)
+  customerVerifiedById String?            @db.Uuid
+  subject              String             @db.VarChar(256)
+  category             TicketCategory?
+  priority             TicketPriority     @default(MEDIUM)
+  status               TicketStatus       @default(NEW)
+  source               TicketSource       @default(AGENT)
+  assigneeId           String?            @db.Uuid
+  requesterEmail       String?            @db.VarChar(320)
+  requesterCustomerRef String?            @db.VarChar(64)
+  version              Int                @default(1)
+  createdAt            DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime           @updatedAt @db.Timestamptz(3)
+  workspace            Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  customer             Customer?          @relation(fields: [workspaceId, customerId], references: [workspaceId, id], onDelete: Restrict)
+  assignee             Membership?        @relation("TicketAssignee", fields: [workspaceId, assigneeId], references: [workspaceId, id], onDelete: Restrict)
+  customerVerifiedBy   Membership?        @relation("TicketVerifier", fields: [workspaceId, customerVerifiedById], references: [workspaceId, id], onDelete: Restrict)
+  messages             TicketMessage[]
+  runs                 InvestigationRun[]
+  proposals            Proposal[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, reference])
+  @@index([workspaceId, status, updatedAt(sort: Desc), id])
+  @@index([workspaceId, customerId])
+  @@index([workspaceId, assigneeId])
+  @@index([workspaceId, customerVerifiedById])
+  @@schema("handled")
+}
+
+model TicketMessage {
+  id                 String            @id @default(uuid()) @db.Uuid
+  workspaceId        String            @db.Uuid
+  ticketId           String            @db.Uuid
+  authorType         MessageAuthorType
+  visibility         MessageVisibility @default(PUBLIC)
+  authorUserId       String?           @db.Uuid
+  authorMembershipId String?           @db.Uuid
+  body               String            @db.Text
+  createdAt          DateTime          @default(now()) @db.Timestamptz(3)
+  workspace          Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  ticket             Ticket            @relation(fields: [workspaceId, ticketId], references: [workspaceId, id], onDelete: Restrict)
+  author             Profile?          @relation(fields: [authorUserId], references: [id], onDelete: Restrict)
+  membership         Membership?       @relation(fields: [workspaceId, authorMembershipId, authorUserId], references: [workspaceId, id, userId], onDelete: Restrict)
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, ticketId, createdAt, id])
+  @@index([authorUserId])
+  @@index([workspaceId, authorMembershipId, authorUserId])
+  @@schema("handled")
+}

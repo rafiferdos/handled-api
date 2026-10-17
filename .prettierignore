@@ -10,4 +10,5 @@ skills-lock.json
 .windsurf/
 .codex/
 .aws/
+.superpowers/
 .env*
