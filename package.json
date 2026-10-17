@@ -28,7 +28,8 @@
     "db:validate": "prisma validate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "prisma generate && tsc -p tsconfig.seed.json && node dist-seed/prisma/seed.js"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",

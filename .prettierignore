@@ -12,3 +12,5 @@ skills-lock.json
 .aws/
 .superpowers/
 .env*
+
+dist-seed/
