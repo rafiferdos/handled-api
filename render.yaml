@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+# Apply only after the Supabase migration and runtime-role gates in
+# docs/render-deployment.md. Reuses the verified existing handled-api service.
+previews:
+  generation: off
+
+services:
+  - type: keyvalue
+    name: handled-redis
+    region: singapore
+    plan: free
+    maxmemoryPolicy: noeviction
+    persistenceMode: off
+    ipAllowList: []
+
+  - type: web
+    name: handled-api
+    runtime: node
+    repo: https://github.com/rafiferdos/handled-api
+    branch: testing
+    region: singapore
+    plan: free
+    numInstances: 1
+    autoDeployTrigger: off
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build
+    startCommand: pnpm start:preview
+    healthCheckPath: /ready
+    envVars:
+      - key: NODE_VERSION
+        value: 22.23.3
+      - key: NODE_ENV
+        value: production
+      - key: ENABLE_EXPERIMENTAL_COREPACK
+        value: '1'
+      - key: DATABASE_POOL_MAX
+        value: '2'
+      - key: DATABASE_CONNECT_TIMEOUT_MS
+        value: '10000'
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: AI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_EMBEDDING_MODEL
+        value: gemini-embedding-2
+      - key: AI_PROMPT_VERSION
+        value: handled-core-v1
+      - key: AI_TIMEOUT_MS
+        value: '30000'
+      - key: AI_MAX_RETRIES
+        value: '2'
+      - key: EMBEDDING_DIMENSION
+        value: '768'
+      - key: RAG_TOP_K
+        value: '2'
+      - key: INVESTIGATION_CONCURRENCY
+        value: '1'
+      - key: ACTION_SIMULATION
+        value: 'true'
+      - key: PORT
+        value: '10000'
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SUPPORT_FORM_TOKEN_PEPPER
+        generateValue: true
+      # Enable only after exact hosted origins and reverse-proxy policy review.
+      - key: PUBLIC_INTAKE_ORIGINS
+        value: ''
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: handled-redis
+          property: connectionString
