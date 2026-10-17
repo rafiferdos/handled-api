@@ -39,6 +39,12 @@ Shared defaults already provide exceptions/error codes, DTO validation, response
 
 Step 2 supplies the 18-table business schema, migrations, real A/B dependencies, Lead repositories and explicit scoped fixtures. See [foundation setup](backend-foundation-setup.md). Supabase managed Auth tables stay outside application Prisma ownership; a private lookup function reads and locks their current identity rows.
 
+The connected core extends that foundation to 22 tables and five migrations,
+with knowledge indexing, scoped AI/tools, investigation/decision/action workflows,
+audit, reporting and evaluation. See the [core guide](backend-core-setup.md) and
+[verification record](backend-core-verification.md). A/B/C/D dependencies were
+implemented under the solo instruction; only Lead Jira items are updated.
+
 ## Consumer reviews
 
 - A → all: identity/membership/context, JWT and revocation requirements.

@@ -1,12 +1,8 @@
-# Proposal module
+# Human decisions
 
-Immutable Proposal/Source revisions and exact-version ProposalDecision persistence.
+ProposalService composes immutable revisions and exact-version approve/reject/escalate decisions in an identity-bound transaction. Approval requires Idempotency-Key and current source, ticket, run, policy and target checks; MEDIUM needs a reason, LOW cannot execute. The exact decision, action admission, audit and outbox commit together. Edits preserve confidence and evidence while revalidating actionable content.
 
-Step 2 implements `ProposalRepository` validates structured output, copies immutable snapshots on edit and records decisions in a caller-owned `IdentityTransaction` from `UnitOfWork.runAs`. The coordinator must still verify current ticket/run/target/policy and create action/outbox atomically.
-
-No public approval/action shortcut exists. Real source resolution and policy/action admission follow their numbered steps.
-
-See the [foundation setup/API guide](../../../docs/backend-foundation-setup.md),
-[numbered backend roadmap](../../../docs/solo-backend-steps.md) and real DB tests in
-`test/database`. A/B/C/D are retained module boundaries under the solo workflow.
-Only Lead Jira items receive delivery updates.
+See the [core setup and recovery guide](../../../docs/backend-core-setup.md),
+[verification evidence](../../../docs/backend-core-verification.md) and
+[solo backend roadmap](../../../docs/solo-backend-steps.md). Historical A/B/C/D
+labels are module boundaries under solo execution; only Lead Jira items are updated.

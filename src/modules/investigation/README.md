@@ -1,12 +1,8 @@
-# Investigation module
+# Investigation
 
-Concrete scoped InvestigationRun/Step lifecycle persistence.
+Scoped start/list/detail/proposal/retry APIs compose real persistence with durable job admission. The worker classifies, gathers allowlisted facts and published policy, recommends and drafts a reply under bounded calls/deadlines. Finalization rechecks origin authority, ticket version, source freshness and execution lease. Recorded steps expose operations/outcomes, never private chain-of-thought. Terminal retry creates a new run.
 
-Step 2 implements `InvestigationRepository` includes transactional admission, unique active runs, versioned transitions, bounded recorded steps and new-run retry lineage. `createInTransaction` permits future coordinator composition.
-
-The existing DTO/contracts describe future HTTP orchestration. No investigation endpoint/worker or actual AI call is registered here yet.
-
-See the [foundation setup/API guide](../../../docs/backend-foundation-setup.md),
-[numbered backend roadmap](../../../docs/solo-backend-steps.md) and real DB tests in
-`test/database`. A/B/C/D are retained module boundaries under the solo workflow.
-Only Lead Jira items receive delivery updates.
+See the [core setup and recovery guide](../../../docs/backend-core-setup.md),
+[verification evidence](../../../docs/backend-core-verification.md) and
+[solo backend roadmap](../../../docs/solo-backend-steps.md). Historical A/B/C/D
+labels are module boundaries under solo execution; only Lead Jira items are updated.

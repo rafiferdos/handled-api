@@ -1,8 +1,9 @@
 # Backend foundation setup
 
 Step 2 implements the Auth/Workspace and Customer/Ticket dependencies plus Lead
-persistence. Follow the [numbered roadmap](solo-backend-steps.md) for queues,
-providers, knowledge, orchestration and actions. Frontend remains a later scope.
+persistence. This page records that foundation. The later connected queue,
+provider, knowledge, investigation and action code is described in the
+[core setup guide](backend-core-setup.md). Frontend remains a later scope.
 
 ## Runtime and migrations
 
@@ -11,10 +12,13 @@ verified TLS in remote connection settings. `DATABASE_URL` is the application
 connection; `DIRECT_URL` is the reviewed migration connection. Business data
 lives in private schema `handled`, outside Supabase's exposed Data API schemas.
 
-The four migrations create 18 tables, composite tenant/customer/ticket/version
+The original four Step 2 migrations create 18 tables, composite tenant/customer/ticket/version
 foreign keys, checks, partial active/current indexes, append-only history,
 last-admin constraints, deny-by-default RLS and a private identity lookup.
 No migration creates or changes Supabase-managed Auth tables or accounts.
+The subsequent core migration brings the current total to five migrations and
+22 business tables, with an `extensions.vector(768)` prerequisite described in
+the core guide. Apply the complete reviewed migration history to a new target.
 
 For an explicitly approved target, review a backup and role ownership before:
 

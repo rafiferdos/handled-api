@@ -4,9 +4,22 @@ Updated **17 October 2026**. This is the current numbered plan for this backend.
 It replaces the old Lead-only sequence in [team-lead-steps.md](team-lead-steps.md).
 There are **14 steps**. Frontend implementation will follow separately.
 
-**Current progress:** Steps 1 and 2 code are implemented; see the
-[Step 2 verification and PR evidence](step-2-verification.md). Step 3 is next.
-Shared/live setup remains an explicit operational prerequisite.
+**Current progress:** Steps 1–2 and the connected core code for Steps 3–12 are
+implemented. See the [core verification record](backend-core-verification.md),
+[setup guide](backend-core-setup.md) and [Gemini quickstart](gemini-quickstart.md).
+The local integration tests use an injected provider at the external boundary;
+provider/hosted acceptance is still required before calling the backend complete.
+
+| Steps | Delivered evidence                                                                          | Remaining gate                                                           |
+| ----- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1–2   | Contracts, real Auth/domain persistence and previous PR                                     | Shared setup as needed                                                   |
+| 3     | Outbox, actual local Redis recovery/backpressure and fenced execution                       | Hosted worker continuity                                                 |
+| 4–5   | Gemini adapter, scoped pgvector, published-policy lifecycle                                 | Key-backed probe and actual policy embeddings                            |
+| 6–9   | Scoped tools, investigation/proposal/decision/action pipeline; three API-to-DB golden flows | Actual Gemini in the integrated flow                                     |
+| 10    | Scoped REST polling, audit and basic reporting                                              | Hosted reconnect/restart proof; push is deferred                         |
+| 11    | Versioned 22-case benchmark, scoring, observed usage and CLI                                | Actual measured results and human reply review                           |
+| 12    | Local authority/tenant/evidence/race/failure tests and independent review fixes             | Target grants/RLS and operational backup/restore review                  |
+| 13–14 | Runbooks and local assembled-flow evidence prepared                                         | Shared migration, serving host/worker and deployed three-case acceptance |
 
 The requester is now implementing the project solo. A/B/C/D identify domain
 boundaries, not people to wait for. When a step needs an unfinished domain,
@@ -180,6 +193,9 @@ items without modifying D's tasks.
 **Build:** authenticated Socket rooms and thin events, durable REST recovery,
 scoped audit/action history and basic DB-derived analytics/admin APIs.
 
+**Selected delivery:** authenticated REST polling, including restart/refetch
+recovery tests. Socket push remains deferred until the hosting model is proven.
+
 **Finish when:** another tenant cannot subscribe/read/count records; expired or
 revoked membership loses access, and reconnect/refetch recovers committed state.
 If the approved deployment uses polling, its recovery path must be tested.
@@ -252,7 +268,8 @@ requester's solo instruction; security and module boundaries are retained.
 
 At the starting commit `e563515`, business models, real auth and domain services
 were absent. Step 2 now supplies their approved foundation and local evidence in
-[its verification record](step-2-verification.md). This roadmap does not establish
-shared/live deployment or completion of later steps. See
+[its verification record](step-2-verification.md). The connected core now extends
+that foundation; its current code/verification limits are recorded above. This
+roadmap does not establish shared/live deployment. See
 [planning sources](planning-sources.md) and the
 [Step 1 verification record](step-1-verification.md) for dated context.
