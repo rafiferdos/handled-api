@@ -1,5 +1,34 @@
 # Hosted backend deployment handoff — 18 October 2026, Asia/Dhaka
 
+## Connected-session continuation
+
+Render resource tools are now available and authenticated. The user confirmed
+`My Workspace` (`tea-db390a7lot8c73f11180`). Live inspection confirms the existing
+API is still Free/Singapore/`development`, with live commit `e563515`; no worker
+or Key Value instance exists. Remote `testing` remains `75d331b`.
+
+The proposed [root Blueprint](../render.yaml) adopts that API and adds the separate
+worker and persistent private Redis in Singapore. Published compute is USD 24/month
+(7 API + 7 worker + 10 Redis), pending spending approval. No paid resource or
+cloud mutation has been performed. See [the rollout guide](render-deployment.md)
+for exact resources, secret wiring, database gates, access limits, and acceptance.
+
+Fresh read-only Supabase inspection still finds zero business tables, no migration
+history, no private identity function, and no vector extension. The configured
+runtime credential is privileged `postgres`; runtime role review remains required.
+The official Render CLI 2.29.0 is installed in `/tmp/handled-render-cli/render`,
+but its validation command requires CLI login. Connector OAuth works independently.
+The connector has no worker creation or Blueprint-apply tool, and browser inventory
+is empty. Use authorized CLI access or the prepared Dashboard flow for those steps.
+
+`pnpm check` passed on Node 22.23.3 / pnpm 11.25.0, including 139 unit and 37 HTTP
+tests plus build; HTTP tests needed sandbox loopback permission. Final Blueprint
+official-schema validation passed, and read-only configuration review has no
+remaining findings. The real configured Gemini probe again returned
+`DEPENDENCY_TIMEOUT`. Hosted acceptance is still pending.
+
+## Historical checkpoint before resource tools loaded
+
 User wants cloud API + continuous worker + cloud Redis; local-only startup is not the objective. Existing user-approved source workflow: feature PR into testing, preserve meaningful commits, merge after verification; update only Lead Jira. User added Render plugin and explicitly reports Connected. Do not ask to install/connect again. Plugin installed state independently confirmed; its skills are available at /home/rafiferdos/.codex/plugins/cache/openai-curated-remote/app-6a624c56bfe081918f7544f7d58f6faf/1.0.2/. Current tool inventory has NO Render resource tools, and computer-use has no enabled browsers. Reload/new Codex session is needed, then discover Render tools, verify account/workspace and list services.
 
 No paid resources, service changes, database migrations/grants or cloud secret uploads have been performed. Cloud deployment remains incomplete. No application code changes were made. Base is testing at 75d331b13d54a1817df72d74cd9294a9cd3ad63d; current work is on chore/SCRUM-17-hosted-deployment. Remote testing matches the base. Remote development is still e56351516d80d10df8eba8327b27b5ffc474dbf2; do not deploy that old source. Existing preview from Notion: https://handled-api-zv4h.onrender.com; service srv-db8gpj0m7kps73fq20ag, historical Singapore region and development branch. Reinspect actual live settings after Render access loads.
