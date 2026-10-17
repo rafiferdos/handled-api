@@ -11,7 +11,8 @@ export class CreateWorkspaceDto {
   @ApiProperty({ minLength: 3, maxLength: 40 })
   @Trim()
   @IsString()
-  @Matches(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,38}[a-zA-Z0-9]$/)
+  @Length(3, 40)
+  @Matches(/^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/)
   slug: string;
 }
 export class UpdateWorkspaceDto extends VersionDto {

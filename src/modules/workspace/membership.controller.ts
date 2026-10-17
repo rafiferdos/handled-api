@@ -14,6 +14,7 @@ import {
   CurrentActor,
   CurrentIdentity,
 } from '../../common/decorators/actor.decorator.js';
+import { RequestId } from '../../common/decorators/request-id.decorator.js';
 import { WorkspaceScoped } from '../../common/decorators/access.decorator.js';
 import type {
   WorkspaceActor,
@@ -100,7 +101,8 @@ export class InviteAcceptController {
   accept(
     @CurrentIdentity() identity: VerifiedIdentity,
     @Body() input: AcceptInviteDto,
+    @RequestId() requestId: string,
   ) {
-    return this.invites.accept(identity, input.token);
+    return this.invites.accept(identity, input.token, requestId);
   }
 }

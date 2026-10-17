@@ -12,6 +12,7 @@ import {
   CurrentActor,
   CurrentIdentity,
 } from '../../common/decorators/actor.decorator.js';
+import { RequestId } from '../../common/decorators/request-id.decorator.js';
 import { WorkspaceScoped } from '../../common/decorators/access.decorator.js';
 import type {
   VerifiedIdentity,
@@ -38,8 +39,9 @@ export class WorkspaceController {
   create(
     @CurrentIdentity() identity: VerifiedIdentity,
     @Body() input: CreateWorkspaceDto,
+    @RequestId() requestId: string,
   ) {
-    return this.workspaces.create(identity, input);
+    return this.workspaces.create(identity, input, requestId);
   }
   @Get()
   @ApiSuccessResponse(WorkspaceResponseDto, { paginated: true })

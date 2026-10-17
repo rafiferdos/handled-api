@@ -9,6 +9,8 @@ export function paginationBounds(query: PaginationQueryDto): {
 } {
   const skip = (query.page - 1) * query.limit;
   if (
+    !Number.isInteger(query.page) ||
+    query.page < 1 ||
     !Number.isSafeInteger(skip) ||
     skip < 0 ||
     skip > 2147483647 ||

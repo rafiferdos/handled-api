@@ -29,7 +29,11 @@ export const workspaceSelect = {
 @Injectable()
 export class WorkspaceService {
   constructor(@Inject(UnitOfWork) private readonly uow: UnitOfWork) {}
-  async create(identity: VerifiedIdentity, input: CreateWorkspaceDto) {
+  async create(
+    identity: VerifiedIdentity,
+    input: CreateWorkspaceDto,
+    requestId = 'workspace-create',
+  ) {
     try {
       return await this.uow.run(async (tx) => {
         const user = await assertIdentity(tx, identity);
@@ -52,7 +56,7 @@ export class WorkspaceService {
           {
             ...identity,
             workspaceId: workspace.id,
-            requestId: 'workspace-create',
+            requestId,
           },
           {
             entityType: 'workspace',

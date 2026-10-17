@@ -114,7 +114,11 @@ export class InvitationService {
       return result;
     });
   }
-  accept(identity: VerifiedIdentity, token: string) {
+  accept(
+    identity: VerifiedIdentity,
+    token: string,
+    requestId = 'invite-accept',
+  ) {
     if (!/^[A-Za-z0-9_-]{43}$/.test(token))
       throw new AppException('VALIDATION_ERROR');
     return this.uow.run(async (tx) => {
@@ -173,7 +177,7 @@ export class InvitationService {
         {
           ...identity,
           workspaceId: invite.workspaceId,
-          requestId: 'invite-accept',
+          requestId,
         },
         {
           entityType: 'membership',
