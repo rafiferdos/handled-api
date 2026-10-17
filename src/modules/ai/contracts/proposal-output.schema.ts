@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TicketCategory } from '../../../generated/prisma/enums.js';
 import {
   Confidence,
   TicketPriority,
@@ -10,12 +11,8 @@ import {
   textSchema,
 } from './contract-primitives.js';
 
-// Category taxonomy is owned/reviewed with B. Do not invent a competing Ticket enum.
-export const categorySchema = z
-  .string()
-  .min(1)
-  .max(64)
-  .regex(/^[A-Z][A-Z0-9_]*$/);
+// Shared B/Lead taxonomy now has a concrete schema owner.
+export const categorySchema = z.enum(TicketCategory);
 
 export const classificationSchema = z
   .strictObject({

@@ -1,3 +1,4 @@
+import { TicketCategory } from '../../../generated/prisma/enums.js';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   ActionExecutionStatus,
@@ -17,12 +18,8 @@ import { recommendationSchema } from '../contracts/recommendation.schema.js';
 import type { Recommendation } from '../contracts/recommendation.schema.js';
 
 export class ProposalContentDto implements ProposalOutput {
-  @ApiProperty({
-    pattern: '^[A-Z][A-Z0-9_]*$',
-    maxLength: 64,
-    example: 'BILLING_DUPLICATE_CHARGE',
-  })
-  readonly category: string;
+  @ApiProperty({ enum: TicketCategory })
+  readonly category: ProposalOutput['category'];
   @ApiProperty({ maxLength: ContractLimit.SUMMARY, minLength: 1 })
   readonly summary: string;
   @ApiProperty({ enum: Confidence }) readonly confidence: Confidence;
