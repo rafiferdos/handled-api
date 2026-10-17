@@ -1,5 +1,16 @@
 # Ownership and conflict prevention
 
+**Solo execution override — 17 October 2026:** the requester now implements all
+backend domains. A/B/C/D below remain module boundaries, not separate people to
+wait for. Implement required dependencies fully in their own modules and verify
+their contracts; do not create shadow models or fake integration. The former
+external-owner waiting rule is superseded by this direct instruction. Follow the
+[solo backend sequence](solo-backend-steps.md). Only Lead Jira items receive
+updates; frontend implementation is deferred. Feature PRs target `testing` and
+are merged there after applicable verification, as explicitly requested. Shared
+database/infrastructure actions remain separate from a code merge. The legacy
+team workflow below is retained as architectural and historical context.
+
 Use the [14 October canonical plan](https://app.notion.com/p/3f94ab5df14481ca9e8cf25219e10442) and [data/security contracts](https://app.notion.com/p/3f94ab5df144812c9efdde1a3ffd96f0). Owner names below are role slots; Jira records actual assignees.
 
 | Owner     | Feature folders                                                       | Prisma files                       | Producer contract                                                                |

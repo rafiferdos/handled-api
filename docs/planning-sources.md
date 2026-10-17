@@ -1,5 +1,29 @@
 # Planning sources and implementation boundaries
 
+## 17 October 2026 refresh
+
+The Handled hub, canonical plan, ownership/security, commercial roadmap, release
+gates, technology registry, backend blueprint, ERD, AI instructions, Project
+Pulse, free-deployment guide and linked Git workflow were fetched again. The
+hub's linked requirements now explicitly require a working synthetic test-company
+flow before a paying customer exists: hosted intake, authenticated dashboard,
+real API/DB/provider/RAG/jobs, human approval, a persisted simulated DB effect and
+audit/result after refetch. This is required acceptance, not implemented status.
+
+The requester has superseded the old execution constraints: solo implementation
+across dependency domains, backend first, frontend later, only Lead Jira updates,
+and feature PRs merged into `testing`. Those user instructions govern this
+checkout without rewriting the shared Notion ownership register. See the
+[current solo sequence](solo-backend-steps.md) and
+[Step 2 design](superpowers/specs/2026-10-17-solo-backend-foundation-design.md).
+
+The [free-deployment guide](https://app.notion.com/p/3fa4ab5df144819b9f21dd98384a1c10)
+records a dated foundation preview; its health/database proof does not establish
+auth, business models, AI or worker continuity. The
+[Project Pulse](https://app.notion.com/p/3f94ab5df14481cfa73de41d3c7796bd) counts
+remain a dated Jira snapshot, not a live progress report. Neither was treated as
+fresh implementation evidence. The original source register follows below.
+
 The Handled Notion hub and its linked planning/reference pages were read for this starter on **14 October 2026**. Documentation describes intent; source, tests, migrations and deployed evidence establish actual behavior. Do not infer that a feature exists from a Notion page or schema filename.
 
 | Source                                                                                            | Role                                                                          |
