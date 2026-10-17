@@ -170,3 +170,42 @@ it('rechecks identity after provider work and never publishes after session revo
     }),
   ).toBe(0);
 });
+it('fences an obsolete worker before proposal commit and recovers with a fresh delivery', async () => {
+  const f = await fixture();
+  provider.output = {
+    category: 'OTHER',
+    summary: 'Human review required',
+    confidence: provider.classification.confidence,
+    missingFacts: ['No policy'],
+    recommendation: null,
+    replyDraft: 'An agent will review this.',
+    evidenceRefs: [],
+  };
+  const queued = await service.start(f.actor, f.ticket.id);
+  provider.beforeReply = async () => {
+    provider.beforeReply = undefined;
+    await db.prisma.outboxEvent.updateMany({
+      where: { workspaceId: f.actor.workspaceId, type: 'job.investigation' },
+      data: { lockToken: randomUUID() },
+    });
+  };
+  await deliver(f.actor.workspaceId);
+  expect(
+    await db.prisma.proposal.count({
+      where: { workspaceId: f.actor.workspaceId },
+    }),
+  ).toBe(0);
+  expect(
+    (
+      await db.prisma.investigationRun.findUniqueOrThrow({
+        where: { id: queued.investigationId },
+      })
+    ).status,
+  ).toBe('RUNNING');
+  await deliver(f.actor.workspaceId);
+  expect(
+    await db.prisma.proposal.count({
+      where: { workspaceId: f.actor.workspaceId },
+    }),
+  ).toBe(1);
+});

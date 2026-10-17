@@ -174,15 +174,28 @@ export class GeminiProvider extends AiProvider {
     const settings = providerConfig(this.config);
     if (!text.trim() || text.length > 100000)
       throw new AppException('AI_PROVIDER_ERROR');
+    const legacy = /(?:^|\/)gemini-embedding-001$/.test(
+      settings.embeddingModel,
+    );
     const result = await this.bounded(
       (abortSignal) =>
         this.client().embedContent({
           model: settings.embeddingModel,
-          contents: text,
+          contents: legacy
+            ? text
+            : task === 'query'
+              ? `task: search result | query: ${text}`
+              : `title: none | text: ${text}`,
           config: {
             outputDimensionality: 768,
-            taskType:
-              task === 'document' ? 'RETRIEVAL_DOCUMENT' : 'RETRIEVAL_QUERY',
+            ...(legacy
+              ? {
+                  taskType:
+                    task === 'document'
+                      ? 'RETRIEVAL_DOCUMENT'
+                      : 'RETRIEVAL_QUERY',
+                }
+              : {}),
             abortSignal,
             httpOptions: {
               timeout: settings.timeout,
@@ -204,8 +217,8 @@ export class GeminiProvider extends AiProvider {
     const deadline = AbortSignal.timeout(settings.timeout);
     const combined = AbortSignal.any([signal, deadline]);
     for (let attempt = 0; ; attempt++) {
-      combined.throwIfAborted();
       try {
+        combined.throwIfAborted();
         return await work(combined);
       } catch (error) {
         if (combined.aborted)

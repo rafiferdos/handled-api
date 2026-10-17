@@ -92,3 +92,29 @@ it('enforces a real abort deadline instead of waiting for an unbounded provider'
     ),
   ).rejects.toMatchObject({ code: 'DEPENDENCY_TIMEOUT' });
 });
+it('returns a safe dependency error when the caller has already cancelled', async () => {
+  const signal = AbortSignal.abort();
+  await expect(
+    new GeminiProvider(config(), client('{}')).classify({}, signal),
+  ).rejects.toMatchObject({ code: 'DEPENDENCY_UNAVAILABLE' });
+});
+it('uses the documented Embedding 2 task prefix without the unsupported taskType field', async () => {
+  const settings = config();
+  settings.set('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-2');
+  const transport = client('{}');
+  transport.embedContent = async (input) => {
+    if (
+      input.config?.taskType !== undefined ||
+      input.contents !== 'task: search result | query: refund policy'
+    )
+      throw new Error('Embedding 2 protocol rejected');
+    return { embeddings: [{ values: Array(768).fill(1) }] };
+  };
+  expect(
+    await new GeminiProvider(settings, transport).embed(
+      'refund policy',
+      'query',
+      new AbortController().signal,
+    ),
+  ).toHaveLength(768);
+});
