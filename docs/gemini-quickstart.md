@@ -1,6 +1,6 @@
 # Gemini setup
 
-Updated **17 October 2026**. The ignored local `.env` already has the non-secret
+Updated **18 October 2026**. The ignored local `.env` already has the non-secret
 model settings below. Existing database/Auth configuration was preserved.
 
 1. Create a key in [Google AI Studio](https://aistudio.google.com/apikey). Put it
@@ -40,6 +40,16 @@ is unavailable to your key, update the environment using the current official
 [generation](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash) and
 [embedding](https://ai.google.dev/gemini-api/docs/models/gemini-embedding-2)
 references, then repeat the probe. `AI_MODEL` overrides `GEMINI_MODEL`.
+
+Gemini 3 generation requests explicitly use `thinkingLevel: LOW` to fit the
+interactive deadline. A synthetic request with default thinking timed out after
+45 seconds; the same request with LOW returned HTTP 200 in 2.8 seconds. The full
+classification/read-tool/embedding probe with LOW passed in 9.3 seconds. Keep
+the real abort deadline and output/schema validation enabled. This setting does
+not disable human approval or change the embedding model. Older model requests
+do not receive Gemini 3 thinking-level parameters. See Google's
+[thinking guide](https://ai.google.dev/gemini-api/docs/thinking) for supported
+levels; Gemini 3.8 Flash does not support `minimal`.
 
 4. Follow the [core setup guide](backend-core-setup.md) to review/apply migrations
    and runtime grants on the chosen database. Start the compiled API and worker

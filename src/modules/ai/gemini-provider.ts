@@ -1,6 +1,10 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenAI, FunctionCallingConfigMode } from '@google/genai';
+import {
+  GoogleGenAI,
+  FunctionCallingConfigMode,
+  ThinkingLevel,
+} from '@google/genai';
 import type {
   GenerateContentParameters,
   GenerateContentResponse,
@@ -148,6 +152,10 @@ export class GeminiProvider extends AiProvider {
             ...options,
             temperature: 0,
             maxOutputTokens: 4096,
+            // Gemini 3's default thinking can exhaust the interactive deadline.
+            ...(/(?:^|\/)gemini-3(?:[.-]|$)/.test(settings.model)
+              ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } }
+              : {}),
             abortSignal,
             httpOptions: {
               timeout: settings.timeout,

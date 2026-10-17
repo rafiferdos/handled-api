@@ -118,3 +118,62 @@ it('uses the documented Embedding 2 task prefix without the unsupported taskType
     ),
   ).toHaveLength(768);
 });
+it.each(['gemini-3.8-flash', 'models/gemini-3.8-flash'])(
+  'completes classification within its deadline for %s by bounding thinking effort',
+  async (model) => {
+    const settings = config();
+    settings.set('AI_MODEL', model);
+    const classification = {
+      category: 'BILLING_DUPLICATE_CHARGE',
+      priority: 'MEDIUM',
+      confidence: 'LOW',
+      missingFacts: [],
+    };
+    const response = client(JSON.stringify(classification));
+    const transport: GeminiClient = {
+      ...response,
+      generateContent: async (input) => {
+        if (input.config?.thinkingConfig?.thinkingLevel !== 'LOW')
+          return new Promise((_, reject) => {
+            input.config?.abortSignal?.addEventListener(
+              'abort',
+              () => reject(new Error('Thinking exceeded the deadline')),
+              { once: true },
+            );
+          });
+        return response.generateContent(input);
+      },
+    };
+    const result = await new GeminiProvider(settings, transport).classify(
+      { subject: 'Synthetic duplicate charge' },
+      new AbortController().signal,
+    );
+    expect(result.value).toEqual(classification);
+  },
+);
+it('keeps Gemini 3 thinking levels out of legacy generation requests', async () => {
+  const settings = config();
+  settings.set('AI_MODEL', 'gemini-2.5-flash');
+  const classification = {
+    category: 'BILLING_DUPLICATE_CHARGE',
+    priority: 'MEDIUM',
+    confidence: 'LOW',
+    missingFacts: [],
+  };
+  const response = client(JSON.stringify(classification));
+  const transport: GeminiClient = {
+    ...response,
+    generateContent: async (input) => {
+      if (input.config?.thinkingConfig !== undefined)
+        throw new Error(
+          'Legacy model does not accept Gemini 3 thinking levels',
+        );
+      return response.generateContent(input);
+    },
+  };
+  const result = await new GeminiProvider(settings, transport).classify(
+    { subject: 'Synthetic duplicate charge' },
+    new AbortController().signal,
+  );
+  expect(result.value).toEqual(classification);
+});

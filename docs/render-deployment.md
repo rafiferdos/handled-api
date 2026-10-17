@@ -136,8 +136,10 @@ repeated signals at the actual entrypoint, and forced shutdown. The final
 and production build. Independent review verified forced cleanup at 25 seconds
 with no surviving child PIDs and has no remaining findings.
 
-The configured real Gemini probe currently fails `DEPENDENCY_TIMEOUT`.
-Generation, published policy indexing, investigation, human approval, simulated
+The Gemini timeout follow-up now passes the real configured provider probe with
+explicit LOW thinking for Gemini 3 generation: classification, two validated
+read-tool calls, and 768-dimension embedding. The probe ran locally against the
+real Free provider. Hosted generation, published policy indexing, investigation, human approval, simulated
 business effects, duplicate-effect prevention after hosted restart, and frontend
 acceptance remain separate gates until demonstrated. A live API or queue
 connection alone does not establish these outcomes. No paid provider plan is

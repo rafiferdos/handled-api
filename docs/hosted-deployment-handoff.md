@@ -49,8 +49,14 @@ missing delivery recovered after lease expiry and PUBLISHED at attempt 2.
 After the runtime replacement and full old-instance drain/shutdown window, a new
 no-op job also PUBLISHED at attempt 1, and health/readiness/private denial stayed
 200/200/401. No matching runtime failure logs were found.
-These are infrastructure tests, not AI/business acceptance. The real Gemini probe again failed
-`DEPENDENCY_TIMEOUT`; hosted business/AI acceptance is pending.
+These are infrastructure tests, not AI/business acceptance. A later Gemini
+follow-up reproduced a 45-second direct generation timeout with default thinking;
+the identical request with `thinkingLevel: LOW` returned 200 in 2.8 seconds.
+Gemini 3 generation now explicitly uses LOW without extending the deadline.
+The standard built provider probe passes classification, two allowlisted read
+tools, and 768-dimension embedding. This probe ran locally against the real Free
+provider; hosted business/AI acceptance is still pending. The follow-up check
+passes 147 unit/process and 37 HTTP tests. See [Gemini setup](gemini-quickstart.md).
 
 See [the Free rollout guide](render-deployment.md) for exact runtime settings,
 manual CLI/MCP application, free-tier limits, secret handling, and acceptance.
