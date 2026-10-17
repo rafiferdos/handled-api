@@ -1,5 +1,0 @@
-enum Role{
-    admin 
-     customer 
-     guest
-}

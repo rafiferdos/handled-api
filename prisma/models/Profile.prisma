@@ -12,10 +12,9 @@ model Profile {
   createdAt         DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime  @default(now()) @db.Timestamptz(6)
 
-  createdWorkspaces  Workspace[]         @relation("WorkspaceCreator")
-  memberships        Membership[]
-  acceptedInvites    Invite[]            @relation("InviteAcceptor")
-  dataAccessRequests DataAccessRequest[]
+  createdWorkspaces Workspace[]  @relation("WorkspaceCreator")
+  memberships       Membership[]
+  acceptedInvites   Invite[]     @relation("InviteAcceptor")
 
   // SQL CHECK constraints: prisma/sql/profile-workspace-constraints.sql
 }

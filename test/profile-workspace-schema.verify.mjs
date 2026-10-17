@@ -21,20 +21,10 @@ const schemaName = `profile_workspace_${randomUUID().replaceAll('-', '')}`;
 const client = new pg.Client({ connectionString: url });
 let passed = 0;
 try {
-  // Other owners' tables are deliberately excluded, while all four models'
-  // columns, enums, indexes and internal relations come from the real schema.
+  // Use the four real schemas verbatim; no replacement models or mocked FKs.
   let schema = 'datasource db {\n provider = "postgresql"\n}\n';
   for (const name of ['Profile', 'Workspace', 'Membership', 'Invite']) {
-    schema +=
-      readFileSync(`prisma/models/${name}.prisma`, 'utf8')
-        .split('\n')
-        .filter(
-          (line) =>
-            !/^\s*(dataAccessRequests|providerConnections|billingAccount|subscriptions|installedConnections)\s/.test(
-              line,
-            ),
-        )
-        .join('\n') + '\n';
+    schema += readFileSync(`prisma/models/${name}.prisma`, 'utf8') + '\n';
   }
   const schemaFile = join(folder, 'schema.prisma');
   writeFileSync(schemaFile, schema);
@@ -252,10 +242,11 @@ try {
 } finally {
   await client.query('ROLLBACK').catch(() => {});
   await client.end();
-  if (dirname(resolve(folder)) !== resolve(tmpdir())) {
-    throw new Error(
-      'Refusing to remove a test directory outside the temporary root.',
+  if (dirname(resolve(folder)) === resolve(tmpdir())) {
+    rmSync(folder, { recursive: true, force: true });
+  } else {
+    console.error(
+      'Skipped cleanup: test directory is outside the temporary root.',
     );
   }
-  rmSync(folder, { recursive: true, force: true });
 }

@@ -12,12 +12,11 @@ model Membership {
   createdAt       DateTime          @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime          @default(now()) @db.Timestamptz(6)
 
-  workspace            Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  user                 Profile              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  inviter              Membership?          @relation("MembershipInviter", fields: [workspaceId, invitedByUserId], references: [workspaceId, userId], onDelete: Restrict, onUpdate: Restrict)
-  invitedMembers       Membership[]         @relation("MembershipInviter")
-  createdInvites       Invite[]             @relation("InviteCreator")
-  installedConnections ProviderConnection[]
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  user           Profile      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  inviter        Membership?  @relation("MembershipInviter", fields: [workspaceId, invitedByUserId], references: [workspaceId, userId], onDelete: Restrict, onUpdate: Restrict)
+  invitedMembers Membership[] @relation("MembershipInviter")
+  createdInvites Invite[]     @relation("InviteCreator")
   // SQL CHECK constraints: prisma/sql/profile-workspace-constraints.sql
 
   @@unique([workspaceId, userId], map: "uq_membership_workspace_user")

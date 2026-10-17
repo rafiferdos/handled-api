@@ -20,13 +20,9 @@ model Workspace {
   websiteUrl           String?          @db.VarChar(2048)
   industry             String?          @db.VarChar(80)
 
-  creator             Profile?                @relation("WorkspaceCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  memberships         Membership[]
-  invites             Invite[]
-  providerConnections ProviderConnection[]
-  billingAccount      BillingAccount?
-  subscriptions       WorkspaceSubscription[]
-  dataAccessRequests  DataAccessRequest[]
+  creator     Profile?     @relation("WorkspaceCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  memberships Membership[]
+  invites     Invite[]
   // SQL CHECK constraints: prisma/sql/profile-workspace-constraints.sql
 
   @@index([status, createdAt], map: "idx_workspace_status")

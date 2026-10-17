@@ -32,7 +32,8 @@ erDiagram
 Every relationship uses RESTRICT for updates/deletes. Membership exposes
 unique (workspaceId,userId), (workspaceId,id), and (workspaceId,id,userId)
 keys for tenant-safe references by other owners. Invite exposes
-(workspaceId,id). Existing reverse links for Person A's other models remain.
+(workspaceId,id). Future commercial/connector models and their reverse links
+are excluded from this Week 1 slice.
 Other owners should add their own child models/relations with coordinated review,
 not introduce duplicate Workspace or Profile definitions.
 
@@ -93,13 +94,24 @@ node test/profile-workspace-schema.verify.mjs
 The opt-in script requires an explicit localhost test URL, never loads .env or
 DATABASE_URL, generates DDL from these four real schemas, and runs in a unique
 schema inside a rolled-back transaction. It does not alter public application
-tables. Cross-domain reverse fields are excluded only in the isolated test DDL;
+tables. The four schemas are tested verbatim, including their real foreign keys;
 the full project is independently checked by Prisma validation.
 
 Local result: 30 database scenarios pass, covering valid transitions,
 cross-tenant rejections, duplicate/token constraints, lifecycle and data checks.
 Docker was unavailable; verification used a temporary PostgreSQL 18 cluster
 bound to loopback, then stopped it. No production authentication/email calls occur.
+
+PR cleanup verification: origin/development was fetched and the feature branch
+was already up to date. The final diff contains only these four models, this
+document, the SQL supplement and the database verification script. AuthModule
+matches development, preserving its exported global deny-by-default resolver.
+Supabase endpoints, duplicate Prisma/Profile services, future roadmap schemas,
+extra auth packages, environment changes and Bun lockfile are excluded.
+`pnpm check` passes: formatting, lint, typecheck, 111 unit tests, 37 E2E tests
+and build. The test-only dependency-failure 503 log is expected. Node 24 was used
+locally and warns because the repository specifies Node 22; CI and peer approval
+are separate required evidence, not established by local checks.
 
 Suggested daily update (not posted automatically):
 
