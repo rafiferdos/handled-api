@@ -8,7 +8,16 @@ export function paginationBounds(query: PaginationQueryDto): {
   take: number;
 } {
   const skip = (query.page - 1) * query.limit;
-  if (!Number.isSafeInteger(skip)) {
+  if (
+    !Number.isInteger(query.page) ||
+    query.page < 1 ||
+    !Number.isSafeInteger(skip) ||
+    skip < 0 ||
+    skip > 2147483647 ||
+    !Number.isInteger(query.limit) ||
+    query.limit < 1 ||
+    query.limit > 100
+  ) {
     throw new AppException(ErrorCode.VALIDATION_ERROR, [
       { field: 'page', messages: ['Pagination offset is too large'] },
     ]);

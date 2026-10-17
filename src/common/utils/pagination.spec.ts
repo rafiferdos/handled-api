@@ -42,3 +42,13 @@ describe('pagination contract', () => {
     expect(() => paginationBounds(query)).toThrow();
   });
 });
+
+it('rejects fractional and invalid internal pagination before Prisma receives an offset', () => {
+  for (const query of [
+    { page: 1.5, limit: 20 },
+    { page: 0, limit: 20 },
+    { page: 1, limit: 0 },
+    { page: 2147483648, limit: 2 },
+  ])
+    expect(() => paginationBounds(query)).toThrow();
+});

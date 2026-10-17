@@ -71,7 +71,8 @@ export const environmentSchema = Joi.object({
   INVESTIGATION_CONCURRENCY: Joi.number().integer().min(1).max(4).default(2),
   // Only simulated business actions are approved for the assignment MVP.
   ACTION_SIMULATION: Joi.boolean().valid(true).default(true),
-  SUPPORT_FORM_TOKEN_PEPPER: Joi.string().allow('').optional(),
+  SUPPORT_FORM_TOKEN_PEPPER: Joi.string().min(32).allow('').optional(),
+  PUBLIC_INTAKE_ORIGINS: corsOrigins.allow('').default(''),
 });
 
 export function validateEnvironment(
@@ -81,6 +82,14 @@ export function validateEnvironment(
     allowUnknown: true,
     abortEarly: false,
   });
+
+  const partialAuth =
+    (config.SUPABASE_JWT_ISSUER || config.SUPABASE_JWKS_URL) &&
+    !config.SUPABASE_URL;
+  if (partialAuth)
+    throw new Error(
+      'Environment configuration invalid: SUPABASE_URL (required for auth verification)',
+    );
 
   if (error) {
     // Joi's raw message may quote a malformed secret. Report keys/types only.

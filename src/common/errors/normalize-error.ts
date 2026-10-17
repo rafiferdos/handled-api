@@ -30,6 +30,15 @@ export function normalizeError(error: unknown): NormalizedError {
       case 'P2003':
       case 'P2025':
         return result(ErrorCode.RESOURCE_NOT_FOUND);
+      case 'P2034':
+        return result(ErrorCode.INVALID_STATE_TRANSITION);
+      case 'P2010':
+        return result(
+          error.meta?.code === '57014'
+            ? ErrorCode.DEPENDENCY_TIMEOUT
+            : ErrorCode.INTERNAL_ERROR,
+        );
+      case 'P2028':
       case 'P2024':
         return result(ErrorCode.DEPENDENCY_TIMEOUT);
       default:

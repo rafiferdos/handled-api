@@ -1,4 +1,92 @@
-// Owner slot: Person B. Planned models: Customer, Subscription, Payment, ProductAccess.
-// Starter: no business models implemented. Add schema through an owner-reviewed PR.
-// Every tenant model needs workspaceId and same-workspace constraints.
-// Coordinate cross-domain relations and migrations; see docs/ownership.md.
+// Support customers' synthetic business records, not Handled SaaS billing.
+model Customer {
+  id            String          @id @default(uuid()) @db.Uuid
+  workspaceId   String          @db.Uuid
+  externalRef   String          @db.VarChar(64)
+  name          String          @db.VarChar(100)
+  email         String          @db.VarChar(320)
+  status        CustomerStatus  @default(ACTIVE)
+  version       Int             @default(1)
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  subscriptions Subscription[]
+  payments      Payment[]
+  access        ProductAccess[]
+  tickets       Ticket[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, externalRef])
+  @@index([workspaceId, createdAt, id])
+  @@schema("handled")
+}
+
+model Subscription {
+  id                 String             @id @default(uuid()) @db.Uuid
+  workspaceId        String             @db.Uuid
+  customerId         String             @db.Uuid
+  externalRef        String             @db.VarChar(64)
+  planCode           String             @db.VarChar(100)
+  productCode        String             @db.VarChar(100)
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime           @db.Timestamptz(3)
+  currentPeriodEnd   DateTime           @db.Timestamptz(3)
+  cancelAtPeriodEnd  Boolean            @default(false)
+  version            Int                @default(1)
+  createdAt          DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime           @updatedAt @db.Timestamptz(3)
+  workspace          Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  customer           Customer           @relation(fields: [workspaceId, customerId], references: [workspaceId, id], onDelete: Restrict)
+  payments           Payment[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, customerId, id])
+  @@unique([workspaceId, externalRef])
+  @@index([workspaceId, customerId, status])
+  @@schema("handled")
+}
+
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  workspaceId      String        @db.Uuid
+  customerId       String        @db.Uuid
+  subscriptionId   String?       @db.Uuid
+  externalRef      String        @db.VarChar(64)
+  billingPeriodKey String        @db.VarChar(32)
+  amountMinor      Int
+  currency         String        @db.Char(3)
+  status           PaymentStatus @default(PENDING)
+  paidAt           DateTime?     @db.Timestamptz(3)
+  refundedAt       DateTime?     @db.Timestamptz(3)
+  version          Int           @default(1)
+  createdAt        DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime      @updatedAt @db.Timestamptz(3)
+  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  customer         Customer      @relation(fields: [workspaceId, customerId], references: [workspaceId, id], onDelete: Restrict)
+  subscription     Subscription? @relation(fields: [workspaceId, customerId, subscriptionId], references: [workspaceId, customerId, id], onDelete: Restrict)
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, externalRef])
+  @@index([workspaceId, customerId, paidAt, id])
+  @@index([workspaceId, customerId, subscriptionId])
+  @@schema("handled")
+}
+
+model ProductAccess {
+  id           String              @id @default(uuid()) @db.Uuid
+  workspaceId  String              @db.Uuid
+  customerId   String              @db.Uuid
+  productCode  String              @db.VarChar(100)
+  status       ProductAccessStatus @default(PENDING)
+  reason       String?             @db.VarChar(256)
+  lastSyncedAt DateTime?           @db.Timestamptz(3)
+  version      Int                 @default(1)
+  createdAt    DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime            @updatedAt @db.Timestamptz(3)
+  workspace    Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  customer     Customer            @relation(fields: [workspaceId, customerId], references: [workspaceId, id], onDelete: Restrict)
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, customerId, productCode])
+  @@schema("handled")
+}

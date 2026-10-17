@@ -93,9 +93,9 @@ and a recommendation requires evidence references. A null recommendation is a
 safe LOW-confidence/manual-review result rather than an invented action.
 Validated proposals and nested evidence/fact/parameter collections are immutable.
 
-The category format is bounded uppercase text. **B's complete category taxonomy
-is not supplied by the current specs/code**; this slice does not invent a second
-Ticket enum. Review the taxonomy with B before freezing that domain constraint.
+Step 2 freezes the shared category taxonomy in Prisma's `TicketCategory`:
+BILLING_DUPLICATE_CHARGE, SUBSCRIPTION_CANCELLATION, PRODUCT_ACCESS_ISSUE and OTHER.
+The Zod output schema and response OpenAPI consume that same taxonomy.
 
 | Allowed recommendation   | targetRef refers to             | Allowed params                                                  |
 | ------------------------ | ------------------------------- | --------------------------------------------------------------- |
@@ -179,7 +179,9 @@ No peer/consumer sign-off is claimed. Full SCRUM-11 contract freeze and SCRUM-12
 real tenant-safety review remain open. Code-only microtasks stay In Review until
 the relevant reviewer accepts their evidence.
 
-The next numbered task is Step 2. At this source baseline A/B's business parent
-models are absent. Pause at that dependency unless the owners have implemented
-them by execution time; do not generate fake parent models or a migration to
-pretend the dependency is satisfied.
+Step 2's real schema, A/B foundation and Lead persistence now exist. The former
+owner dependency pause is superseded by the requester's solo authorization.
+Follow the [current backend roadmap](solo-backend-steps.md) and
+[foundation setup](backend-foundation-setup.md). Actual queue/provider/knowledge
+orchestration, public Lead endpoints and policy/action admission remain their
+later numbered steps; persistence alone does not prove an AI/action result.

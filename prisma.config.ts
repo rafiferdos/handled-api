@@ -5,6 +5,7 @@ export default defineConfig({
   schema: 'prisma',
   migrations: {
     path: 'prisma/migrations',
+    seed: 'pnpm db:seed',
   },
   datasource: {
     // Migrations use a session pooler or direct connection. An empty DIRECT_URL

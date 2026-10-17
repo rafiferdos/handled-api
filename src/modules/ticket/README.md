@@ -1,13 +1,12 @@
 # Ticket module
 
-Owner slot: **Person B**. Scope: Ticket and TicketMessage workflows, assignment and state transitions.
+Authenticated tickets/messages, verification, assignments, manual closure and public intake.
 
-Jira entry points: SCRUM-45 / SCRUM-46 / SCRUM-95. Confirm the current task and assignee in Jira before starting.
+Step 2 implements `TicketService`, `TicketStateService` and `PublicTicketService`. Create workflows are durable/idempotent; public receipts contain only id/reference/status. Customer linking is an explicit authenticated attestation.
 
-Schema file: `prisma/models/ticket.prisma`. Models remain unimplemented in the starter.
+Queue orchestration and action-owned state transitions are added by later steps.
 
-Own ticket state transitions and scoped read/write services. Public intake also needs abuse protection and durable idempotency; @Public does not provide those.
-
-Add controllers/services/DTOs and colocated unit tests here; register them in this module file. Existing module registration is already in `FeaturesModule`, so normal domain work does not require editing `main.ts` or `AppModule`. Export only explicit consumer services.
-
-Follow [ownership](../../../docs/ownership.md), [feature development](../../../docs/feature-development.md) and [contributor workflow](../../../CONTRIBUTING.md). HTTP controllers return domain data; shared infrastructure wraps responses and errors. These module notes do not mean the feature is implemented.
+See the [foundation setup/API guide](../../../docs/backend-foundation-setup.md),
+[numbered backend roadmap](../../../docs/solo-backend-steps.md) and real DB tests in
+`test/database`. A/B/C/D are retained module boundaries under the solo workflow.
+Only Lead Jira items receive delivery updates.

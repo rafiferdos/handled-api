@@ -1,0 +1,213 @@
+enum WorkspaceStatus {
+  ACTIVE
+  SUSPENDED
+
+  @@schema("handled")
+}
+
+enum WorkspaceRole {
+  ADMIN
+  AGENT
+  VIEWER
+
+  @@schema("handled")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  DISABLED
+
+  @@schema("handled")
+}
+
+enum CustomerStatus {
+  ACTIVE
+  BLOCKED
+
+  @@schema("handled")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+
+  @@schema("handled")
+}
+
+enum PaymentStatus {
+  PENDING
+  SETTLED
+  REFUNDED
+  FAILED
+
+  @@schema("handled")
+}
+
+enum ProductAccessStatus {
+  ACTIVE
+  REVOKED
+  PENDING
+
+  @@schema("handled")
+}
+
+enum TicketCategory {
+  BILLING_DUPLICATE_CHARGE
+  SUBSCRIPTION_CANCELLATION
+  PRODUCT_ACCESS_ISSUE
+  OTHER
+
+  @@schema("handled")
+}
+
+enum TicketStatus {
+  NEW
+  QUEUED
+  INVESTIGATING
+  AWAITING_APPROVAL
+  NEEDS_REVIEW
+  EXECUTING
+  EXECUTION_FAILED
+  RESOLVED
+  REJECTED
+  CLOSED
+
+  @@schema("handled")
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+
+  @@schema("handled")
+}
+
+enum TicketSource {
+  AGENT
+  PUBLIC_FORM
+
+  @@schema("handled")
+}
+
+enum MessageAuthorType {
+  CUSTOMER
+  AGENT
+  SYSTEM
+
+  @@schema("handled")
+}
+
+enum MessageVisibility {
+  PUBLIC
+  INTERNAL
+
+  @@schema("handled")
+}
+
+enum InvestigationStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  NEEDS_REVIEW
+
+  @@schema("handled")
+}
+
+enum InvestigationStepType {
+  CLASSIFY
+  TOOL
+  RAG
+  VALIDATE
+  PROPOSE
+
+  @@schema("handled")
+}
+
+enum InvestigationStepStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+
+  @@schema("handled")
+}
+
+enum ProposalStatus {
+  DRAFT
+  READY
+  APPROVED
+  REJECTED
+  ESCALATED
+  SUPERSEDED
+
+  @@schema("handled")
+}
+
+enum Confidence {
+  HIGH
+  MEDIUM
+  LOW
+
+  @@schema("handled")
+}
+
+enum ActionType {
+  REFUND_DUPLICATE_PAYMENT
+  CANCEL_AT_PERIOD_END
+  RESTORE_PRODUCT_ACCESS
+
+  @@schema("handled")
+}
+
+enum SourceType {
+  TOOL
+  KNOWLEDGE
+
+  @@schema("handled")
+}
+
+enum ProposalDecisionKind {
+  EDITED
+  APPROVED
+  REJECTED
+  ESCALATED
+
+  @@schema("handled")
+}
+
+enum AuditActorType {
+  USER
+  AI
+  SYSTEM
+
+  @@schema("handled")
+}
+
+enum OutboxStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+
+  @@schema("handled")
+}
+
+enum ActionExecutionStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  OUTCOME_UNKNOWN
+
+  @@schema("handled")
+}
+
+enum KnowledgeDocumentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("handled")
+}

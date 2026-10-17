@@ -4,6 +4,10 @@ Updated **17 October 2026**. This is the current numbered plan for this backend.
 It replaces the old Lead-only sequence in [team-lead-steps.md](team-lead-steps.md).
 There are **14 steps**. Frontend implementation will follow separately.
 
+**Current progress:** Steps 1 and 2 code are implemented; see the
+[Step 2 verification and PR evidence](step-2-verification.md). Step 3 is next.
+Shared/live setup remains an explicit operational prerequisite.
+
 The requester is now implementing the project solo. A/B/C/D identify domain
 boundaries, not people to wait for. When a step needs an unfinished domain,
 implement and verify that dependency, then resume the step. Complete actual
@@ -246,7 +250,9 @@ requires actual runtime processing before a paying customer exists. Historical
 team assignments and waiting rules are superseded for this execution by the
 requester's solo instruction; security and module boundaries are retained.
 
-At the verified starting commit `e563515`, business models, real auth and domain
-services are still absent. This document is a plan, not Step 2 implementation or
-new passing runtime evidence. See [planning sources](planning-sources.md) and the
+At the starting commit `e563515`, business models, real auth and domain services
+were absent. Step 2 now supplies their approved foundation and local evidence in
+[its verification record](step-2-verification.md). This roadmap does not establish
+shared/live deployment or completion of later steps. See
+[planning sources](planning-sources.md) and the
 [Step 1 verification record](step-1-verification.md) for dated context.

@@ -1,4 +1,4 @@
 import { Module } from '@nestjs/common';
-
-@Module({})
+import { ProposalRepository } from './proposal.repository.js';
+@Module({ providers: [ProposalRepository], exports: [ProposalRepository] })
 export class ProposalModule {}

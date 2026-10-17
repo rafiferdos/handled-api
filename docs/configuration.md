@@ -2,7 +2,7 @@
 
 Copy `.env.example` to `.env` only for your first checkout. Existing developers retain their file and add template keys as needed. ConfigModule validates startup settings and skips the local file in tests. Never put database/provider secrets in frontend environment variables.
 
-## Active starter settings
+## Runtime settings
 
 | Variable                      | Default / requirement                     | Use                                                              |
 | ----------------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
@@ -26,13 +26,13 @@ Keep TLS verification enabled remotely. The public CA certificate is `prisma/cer
 
 Paths are relative to the repository root, so run built servers from the root and include the public cert in the deployment artifact. Local PostgreSQL may use different TLS settings. A future hosted environment must verify its own connection/certificate configuration.
 
-## Validated settings for owner features
+## Feature settings
 
-These keys are available/validated, but their feature runtimes are not implemented by the starter. Each owner must require its needed secrets before enabling a feature and document compatible provider/worker settings.
+Auth and public-intake runtimes are implemented by Step 2. Read the [foundation setup guide](backend-foundation-setup.md) for private identity function grants, token rotation and scoped fixture configuration. Provider/worker keys remain reserved for later roadmap steps.
 
 | Keys                                                                                | Owner / contract                                                                                         |
 | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `SUPABASE_URL`, `SUPABASE_JWT_ISSUER`, `SUPABASE_JWKS_URL`, `SUPABASE_JWT_AUDIENCE` | A; HTTPS endpoints, audience defaults to authenticated                                                   |
+| `SUPABASE_URL`, `SUPABASE_JWT_ISSUER`, `SUPABASE_JWKS_URL`, `SUPABASE_JWT_AUDIENCE` | Auth; HTTPS trusted endpoints, audience defaults to authenticated                                        |
 | `REDIS_URL`                                                                         | D; redis/rediss URI; configure durable worker deployment                                                 |
 | `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL`                          | Lead/C; optional server-side configuration; never hardcode model IDs                                     |
 | `AI_PROVIDER`, `AI_MODEL`, `AI_PROMPT_VERSION`                                      | Lead; proposed provider-neutral keys; define precedence against provider-specific keys in the adapter PR |
@@ -41,8 +41,10 @@ These keys are available/validated, but their feature runtimes are not implement
 | `RAG_TOP_K`                                                                         | C; 5, maximum 20                                                                                         |
 | `INVESTIGATION_CONCURRENCY`                                                         | Lead/D; 2, maximum 4                                                                                     |
 | `ACTION_SIMULATION`                                                                 | D; true required, false rejected for MVP safety                                                          |
-| `SUPPORT_FORM_TOKEN_PEPPER`                                                         | A/B; server-side secret for the future public intake implementation                                      |
+| `SUPPORT_FORM_TOKEN_PEPPER`                                                         | Ticket; private HMAC pepper, at least 32 characters; absent disables intake                              |
 
 The tech registry prefers an environment-based provider abstraction; Resolve AI compatibility remains unverified. This starter does not call any model or promise a model/version/free quota. Do not enable real payment/provider writes by changing an environment flag.
 
 For production-wide rate limiting or request tracing, add the appropriate shared store/trace implementation through a reviewed infrastructure change. The existing limiter is in-memory and traceId is a correlation ID; neither implies a distributed runtime is already configured.
+
+`PUBLIC_INTAKE_ORIGINS` is a comma-separated exact origin allowlist. Empty disables intake. The public limiter uses persisted receipts across API processes (5/IP+form-token and 100/workspace per ten minutes); general throttling remains per-process. Express currently trusts the socket IP; review reverse-proxy handling before public deployment.

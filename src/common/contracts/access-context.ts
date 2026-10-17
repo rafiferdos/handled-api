@@ -10,6 +10,8 @@ export interface AuthenticatedUser {
   id: string;
   // Identity only. Roles always come from an active database membership.
   email?: string;
+  sessionId?: string;
+  expiresAt?: number;
 }
 
 export interface WorkspaceMembership {
@@ -21,11 +23,12 @@ export interface WorkspaceMembership {
 }
 
 export interface AuthenticatedRequest extends Request {
+  requestId?: string;
   user?: AuthenticatedUser;
   membership?: WorkspaceMembership;
 }
 
-// Person A owns the implementation (JWKS verification + scoped DB membership).
+// Implemented by the Auth module; membership is always database authority.
 export abstract class AccessContextResolver {
   abstract authenticate(request: Request): Promise<AuthenticatedUser | null>;
   abstract resolveMembership(

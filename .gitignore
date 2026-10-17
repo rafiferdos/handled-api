@@ -8,3 +8,5 @@ coverage/
 *.tsbuildinfo
 *.log
 .DS_Store
+
+dist-seed/

@@ -1,4 +1,56 @@
-// Owner slot: Person D. Planned models: ActionExecution, AuditEvent, OutboxEvent.
-// Starter: no business models implemented. Add schema through an owner-reviewed PR.
-// Every tenant model needs workspaceId and same-workspace constraints.
-// Coordinate cross-domain relations and migrations; see docs/ownership.md.
+// Real transactional audit/outbox foundation. ActionExecution follows Step 9.
+model AuditEvent {
+  id          String         @id @default(uuid()) @db.Uuid
+  workspaceId String         @db.Uuid
+  entityType  String         @db.VarChar(100)
+  entityId    String         @db.Uuid
+  eventType   String         @db.VarChar(100)
+  actorType   AuditActorType
+  actorId     String?        @db.Uuid
+  metadata    Json           @default("{}")
+  requestId   String         @db.VarChar(128)
+  createdAt   DateTime       @default(now()) @db.Timestamptz(3)
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, entityType, entityId, createdAt(sort: Desc), id])
+  @@schema("handled")
+}
+
+model OutboxEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  workspaceId String       @db.Uuid
+  type        String       @db.VarChar(100)
+  aggregateId String       @db.Uuid
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  availableAt DateTime     @default(now()) @db.Timestamptz(3)
+  lockedUntil DateTime?    @db.Timestamptz(3)
+  lockToken   String?      @db.Uuid
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@unique([workspaceId, id])
+  @@index([status, availableAt, lockedUntil, id])
+  @@index([workspaceId, aggregateId])
+  @@schema("handled")
+}
+
+model IdempotencyRecord {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  actorScope  String    @db.VarChar(128)
+  operation   String    @db.VarChar(100)
+  target      String    @db.VarChar(128)
+  key         String    @db.VarChar(128)
+  requestHash String    @db.Char(64)
+  response    Json
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@unique([workspaceId, actorScope, operation, target, key])
+  @@index([workspaceId, createdAt])
+  @@schema("handled")
+}

@@ -46,3 +46,21 @@ describe('normalizeError', () => {
     ]);
   });
 });
+
+it.each([
+  ['P2034', undefined, 409, 'INVALID_STATE_TRANSITION'],
+  ['P2010', { code: '57014' }, 504, 'DEPENDENCY_TIMEOUT'],
+  ['P2028', undefined, 504, 'DEPENDENCY_TIMEOUT'],
+] as const)(
+  'normalizes exhausted transaction/cancellation failures %s',
+  (code, meta, status, expected) => {
+    const error = new Prisma.PrismaClientKnownRequestError(
+      'private diagnostic',
+      { code, clientVersion: 'test', meta },
+    );
+    expect(normalizeError(error)).toMatchObject({ status, code: expected });
+    expect(JSON.stringify(normalizeError(error))).not.toContain(
+      'private diagnostic',
+    );
+  },
+);

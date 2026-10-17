@@ -26,7 +26,9 @@ export function configureApp(app: NestExpressApplication): void {
     origin: config
       .getOrThrow<string>('CORS_ORIGINS')
       .split(',')
-      .map((origin) => origin.trim()),
+      .concat((config.get<string>('PUBLIC_INTAKE_ORIGINS') || '').split(','))
+      .map((origin) => origin.trim())
+      .filter(Boolean),
     exposedHeaders: ['X-Request-Id'],
     allowedHeaders: [
       'Content-Type',
