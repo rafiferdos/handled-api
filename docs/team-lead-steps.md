@@ -1,4 +1,10 @@
-# Team Lead backend execution order
+# Archived Team Lead backend execution order
+
+> **Superseded on 17 October 2026.** Use the current
+> [14-step solo backend sequence](solo-backend-steps.md). The requester now
+> authorizes implementation of dependency domains; the pause-for-other-owners
+> instructions below are historical. Frontend work is deferred and feature PRs
+> target `testing`. Retained below to explain the earlier Step 1 delivery.
 
 Updated **15 October 2026** after the requester's clarification: this is the
 backend build order, from the first implementation task to the last. There are

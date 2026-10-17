@@ -1,5 +1,16 @@
 # Contributing to Handled API
 
+**Current solo workflow — 17 October 2026:** follow the
+[solo backend steps](docs/solo-backend-steps.md). Start focused work from the
+current `testing` integration branch, push the feature branch, open its PR with
+`testing` as the base, run the applicable checks, and merge that PR into
+`testing` as authorized by the requester. Do not bypass the PR or push/merge
+feature changes to `main` or `development` under this instruction. Implement
+dependency domains rather than wait for separate owners; update only Lead Jira
+items. Preserve domain boundaries and report frontend/deployment acceptance
+separately. The older team examples below remain historical/default guidance
+where this explicit solo workflow does not supersede them.
+
 Start from the [setup guide](README.md), [module ownership](docs/ownership.md) and [feature guide](docs/feature-development.md). Jira is the primary task/status board; GitHub holds code, PRs and reviews. Read the updated [Notion project hub](https://app.notion.com/p/3f24ab5df14481e7875bdb241eff1529) before contract changes.
 
 ## Start your branch

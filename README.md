@@ -6,7 +6,7 @@ Team starter for Handled's modular NestJS REST backend: PostgreSQL/Supabase, Pri
 
 Read [contributing](CONTRIBUTING.md), [ownership](docs/ownership.md), [feature development](docs/feature-development.md), [configuration](docs/configuration.md) and the [14 October Notion source register](docs/planning-sources.md).
 
-The lead's [Step 1 API/data contracts](docs/lead-contracts.md) now provide tested DTOs, strict AI/read-tool/action schemas and reusable OpenAPI route metadata. Consumer review remains pending; these artifacts do not register business endpoints. Follow the [numbered backend execution plan](docs/team-lead-steps.md) for later implementation and dependency gates.
+The lead's [Step 1 API/data contracts](docs/lead-contracts.md) now provide tested DTOs, strict AI/read-tool/action schemas and reusable OpenAPI route metadata. Consumer review remains pending; these artifacts do not register business endpoints. Follow the current [14-step solo backend execution plan](docs/solo-backend-steps.md). The requester now authorizes implementing dependency domains and delivering verified feature PRs into `testing`; frontend implementation follows later.
 
 ## First checkout
 
