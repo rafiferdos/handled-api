@@ -10,8 +10,12 @@ import { AppModule } from '../../src/app.module.js';
 import { PrismaService } from '../../src/common/database/prisma.service.js';
 import { configureApp } from '../../src/config/configure-app.js';
 import { validateEnvironment } from '../../src/config/environment.js';
+import { AiProvider } from '../../src/modules/ai/ai-provider.js';
 
-export async function createTestApplication(prisma: PrismaClient) {
+export async function createTestApplication(
+  prisma: PrismaClient,
+  provider?: AiProvider,
+) {
   const key = await generateKeyPair('ES256');
   const jwk = {
     ...(await exportJWK(key.publicKey)),
@@ -36,12 +40,13 @@ export async function createTestApplication(prisma: PrismaClient) {
     SUPPORT_FORM_TOKEN_PEPPER: 'local-test-pepper-at-least-32-characters',
     PUBLIC_INTAKE_ORIGINS: 'https://support.example.invalid',
   });
-  const module = await Test.createTestingModule({ imports: [AppModule] })
+  const builder = Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(PrismaService)
     .useValue(prisma)
     .overrideProvider(ConfigService)
-    .useValue(config)
-    .compile();
+    .useValue(config);
+  if (provider) builder.overrideProvider(AiProvider).useValue(provider);
+  const module = await builder.compile();
   const app = module.createNestApplication<NestExpressApplication>({
     logger: false,
   });

@@ -37,8 +37,12 @@ export class ProposalService {
     input: z.input<typeof approveSchema>,
   ) {
     if (!isIdempotencyKey(key)) throw new AppException('VALIDATION_ERROR');
-    const body = parseContract(approveSchema, input),
-      hash = sha256(canonicalJson(body));
+    const parsed = parseContract(approveSchema, input);
+    const body = {
+      expectedVersion: parsed.expectedVersion,
+      ...(parsed.reason !== undefined ? { reason: parsed.reason } : {}),
+    };
+    const hash = sha256(canonicalJson(body));
     return this.uow.runAs(actor, async (tx) => {
       await assertWorkspaceActor(tx, actor, WRITERS);
       const scope = {
