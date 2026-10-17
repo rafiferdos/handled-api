@@ -114,3 +114,24 @@ it('does not expose stale embeddings when a policy is archived during indexing',
     await db.prisma.knowledgeChunk.count({ where: { documentId: draft.id } }),
   ).toBe(0);
 });
+it('does not publish indexed chunks for a workspace suspended during an embedding call', async () => {
+  const actor = await createActorFixture(db.prisma);
+  const draft = await knowledge.create(actor, {
+    slug: 'suspended-policy',
+    title: 'Policy',
+    body: 'Only active workspaces may index policy.',
+    policyRules: { allowedActions: [] },
+  });
+  await knowledge.publish(actor, draft.id, { expectedVersion: 1 });
+  provider.beforeEmbed = async () => {
+    provider.beforeEmbed = undefined;
+    await db.prisma.workspace.update({
+      where: { id: actor.workspaceId },
+      data: { status: 'SUSPENDED' },
+    });
+  };
+  await index(actor.workspaceId);
+  expect(
+    await db.prisma.knowledgeChunk.count({ where: { documentId: draft.id } }),
+  ).toBe(0);
+});

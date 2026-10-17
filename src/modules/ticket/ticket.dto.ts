@@ -104,7 +104,8 @@ export class LinkCustomerDto extends VersionDto {
 export class ManualTicketStatusDto extends VersionDto {
   @ApiProperty({
     enum: TicketStatus,
-    description: 'Only allowed human closure edges are accepted.',
+    description:
+      'Allowed closure edges, or EXECUTION_FAILED to NEEDS_REVIEW for a new human investigation.',
   })
   @IsEnum(TicketStatus)
   status: TicketStatus;

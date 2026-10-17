@@ -31,7 +31,9 @@ export class TicketStateService {
     if (
       ticket.version !== expectedVersion ||
       !edges[ticket.status].includes(next) ||
-      (manual && next !== 'CLOSED')
+      (manual &&
+        next !== 'CLOSED' &&
+        !(ticket.status === 'EXECUTION_FAILED' && next === 'NEEDS_REVIEW'))
     )
       throw new AppException('INVALID_STATE_TRANSITION');
     const result = await tx.ticket.updateMany({

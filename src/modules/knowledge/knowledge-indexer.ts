@@ -49,8 +49,14 @@ export class KnowledgeIndexer implements OnModuleInit {
         );
       }
       await this.uow.run(async (tx) => {
-        await tx.$queryRaw`SELECT id FROM handled."Workspace" WHERE id=${job.workspaceId}::uuid AND status='ACTIVE' FOR UPDATE`;
+        const workspaces = await tx.$queryRaw<
+          Array<{ id: string }>
+        >`SELECT id FROM handled."Workspace" WHERE id=${job.workspaceId}::uuid AND status='ACTIVE' FOR UPDATE`;
         await job.assertCurrent(tx);
+        if (!workspaces[0]) {
+          await job.complete(tx);
+          return;
+        }
         const current = await tx.knowledgeDocument.findUnique({
           where: {
             workspaceId_id: {

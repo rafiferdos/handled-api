@@ -18,6 +18,29 @@ const tickets = new TicketService(
 );
 const customers = new CustomerService(uow);
 afterAll(() => db.close());
+it('allows a failed execution to return to human review without fabricating a successful state', async () => {
+  const actor = await createActorFixture(db.prisma);
+  const ticket = await db.prisma.ticket.create({
+    data: {
+      workspaceId: actor.workspaceId,
+      reference: 'TKT-FAILED',
+      subject: 'Failed action',
+      status: 'EXECUTION_FAILED',
+    },
+  });
+  expect(
+    await tickets.manualStatus(actor, ticket.id, {
+      expectedVersion: 1,
+      status: 'NEEDS_REVIEW',
+    }),
+  ).toMatchObject({ status: 'NEEDS_REVIEW', version: 2 });
+  await expect(
+    tickets.manualStatus(actor, ticket.id, {
+      expectedVersion: 2,
+      status: 'RESOLVED',
+    }),
+  ).rejects.toMatchObject({ code: 'INVALID_STATE_TRANSITION' });
+});
 it('creates ticket/message atomically with per-workspace references and durable retry', async () => {
   const a = await createActorFixture(db.prisma),
     b = await createActorFixture(db.prisma);
