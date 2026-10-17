@@ -27,12 +27,7 @@ export async function assertIdentity(
   )
     throw new AppException('UNAUTHENTICATED');
   const users = await tx.$queryRaw<Array<{ id: string; email: string }>>`
-    SELECT u.id, u.email FROM auth.users u JOIN auth.sessions s ON s.user_id = u.id
-    WHERE u.id = ${identity.userId}::uuid AND s.id = ${identity.sessionId}::uuid
-      AND u.email IS NOT NULL AND u.email_confirmed_at IS NOT NULL
-      AND u.deleted_at IS NULL AND (u.banned_until IS NULL OR u.banned_until <= clock_timestamp())
-      AND (s.not_after IS NULL OR s.not_after > clock_timestamp())
-    FOR SHARE OF u, s`;
+    SELECT id, email FROM handled.active_identity(${identity.userId}::uuid, ${identity.sessionId}::uuid)`;
   const user = users[0];
   if (!user || identity.expiresAt <= Date.now() / 1000)
     throw new AppException('UNAUTHENTICATED');
