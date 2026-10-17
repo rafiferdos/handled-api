@@ -91,7 +91,12 @@ queue-connection, outbox-dispatch, or supervisor-failure errors.
   force-cleaned at 25 seconds with no surviving child PIDs.
 - Authenticated Render Blueprint validation: `valid: true`, two resource actions.
 - Independent source/configuration review: no remaining findings.
-- Gemini configured probe: `DEPENDENCY_TIMEOUT`; generation remains unverified.
+- Gemini follow-up: default-thinking direct generation timed out at 45 seconds;
+  LOW returned HTTP 200 in 2.8 seconds. After explicitly selecting LOW for
+  Gemini 3, the standard built provider probe passed real classification, two
+  validated read-tool calls, and a 768-dimension embedding. These calls ran from
+  the local verification environment against the real Free provider, not from
+  the hosted worker. Follow-up `pnpm check`: 147 unit/process + 37 HTTP tests pass.
 - Real hosted policy indexing, investigation/citations, human approval, simulated
   effect/audit, duplicate effects, and frontend acceptance remain unverified.
 - A 15-minute idle/wake exercise and a real Redis-data-loss exercise remain
