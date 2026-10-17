@@ -1,4 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
+import { JobRegistry, OutboxDispatcher } from './outbox-dispatcher.js';
+import { QueueRuntime } from './queue-runtime.js';
 
-@Module({})
+@Global()
+@Module({
+  providers: [JobRegistry, OutboxDispatcher, QueueRuntime],
+  exports: [JobRegistry, OutboxDispatcher, QueueRuntime],
+})
 export class QueueModule {}
