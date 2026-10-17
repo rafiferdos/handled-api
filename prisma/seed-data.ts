@@ -265,6 +265,43 @@ export async function seedFixtures(prisma: PrismaClient, input: SeedInput) {
           },
           update: {},
         });
+      for (const policy of [
+        {
+          slug: 'duplicate-payment-refund',
+          title: 'Duplicate payment refund policy',
+          action: 'REFUND_DUPLICATE_PAYMENT' as const,
+          body: 'A human may approve refund of one duplicate SETTLED charge only when customer, subscription, billing period, amount and currency match another SETTLED payment. Never refund an already refunded payment.',
+        },
+        {
+          slug: 'subscription-cancellation',
+          title: 'Subscription cancellation policy',
+          action: 'CANCEL_AT_PERIOD_END' as const,
+          body: 'A human may approve cancellation of renewal for a current ACTIVE subscription. Set cancelAtPeriodEnd only. Preserve currentPeriodEnd and paid product access.',
+        },
+        {
+          slug: 'product-access-restoration',
+          title: 'Product access restoration policy',
+          action: 'RESTORE_PRODUCT_ACCESS' as const,
+          body: 'A human may approve restoring revoked product access for the verified customer only after a current ACTIVE subscription and a SETTLED current-period payment for the same subscription and exact product are verified.',
+        },
+      ])
+        await tx.knowledgeDocument.upsert({
+          where: {
+            workspaceId_id: {
+              workspaceId,
+              id: fixtureId(workspaceId, `KB:${policy.slug}`),
+            },
+          },
+          create: {
+            id: fixtureId(workspaceId, `KB:${policy.slug}`),
+            workspaceId,
+            slug: policy.slug,
+            title: policy.title,
+            body: policy.body,
+            policyRules: { allowedActions: [policy.action] },
+          },
+          update: {},
+        });
       const ws = await tx.workspace.findUniqueOrThrow({
         where: { id: workspaceId },
       });

@@ -4,16 +4,19 @@ Handled's modular NestJS REST backend uses strict TypeScript, Prisma 7 and
 PostgreSQL/Supabase. The product sequence is ticket → scoped investigation and
 policy evidence → human decision → simulated action → audit.
 
-**Step 2 foundation is implemented:** real asymmetric JWT/current-session
-verification, persisted profiles/workspaces/memberships/invites, scoped customer
-and account reads, ticket/messages/assignment/customer verification, public
-idempotent intake and concrete investigation/proposal persistence. Business
-schema, migrations, repeatable synthetic fixtures and real-PostgreSQL tests are
-included. Shared-database migration, hosted integration, providers, knowledge,
-workers, action execution and frontend acceptance remain separate delivery steps.
+**The backend core is connected:** real Auth/workspaces/customer/ticket intake,
+published policy/vector indexing, configured Gemini/read tools, durable
+investigations, immutable proposals, human decisions, three simulated actions,
+audit/reporting and a 22-case provider benchmark. Business changes are real
+transactional database effects; external actions remain simulated. Live Gemini
+verification, shared migration/grants, hosted worker operation and deployed
+acceptance remain explicit gates. Frontend follows separately.
 
 Start with the [14-step backend roadmap](docs/solo-backend-steps.md),
-[foundation setup and API guide](docs/backend-foundation-setup.md),
+[core setup and operation](docs/backend-core-setup.md),
+[short Gemini setup](docs/gemini-quickstart.md),
+[verification evidence](docs/backend-core-verification.md),
+[foundation setup](docs/backend-foundation-setup.md),
 [configuration](docs/configuration.md), [contributing](CONTRIBUTING.md) and
 [Notion source register](docs/planning-sources.md). The
 [Lead contracts](docs/lead-contracts.md) also cover later orchestration APIs.
@@ -35,7 +38,8 @@ cp .env.example .env
 Configure the authorized PostgreSQL target with verified TLS. Read the setup
 guide before applying a migration, setting runtime grants or seeding a shared
 environment. Auth and public intake fail closed when their configuration is
-absent. Redis/provider settings may stay empty for this foundation step.
+absent. Investigation/indexing need the provider settings and a separately
+running Redis-backed worker; the API alone does not process jobs.
 
 ```bash
 pnpm db:validate
@@ -72,12 +76,16 @@ boundaries. Update only Lead Jira items. Frontend work follows separately.
 | `pnpm db:migrate:deploy`                | Apply reviewed migrations to the explicitly configured target                  |
 | `pnpm db:seed`                          | Explicit scoped synthetic setup; refuses implicit mode/reset                   |
 | `pnpm start:prod`                       | Run compiled server after build/migrations/configuration                       |
+| `pnpm worker:prod`                      | Run the compiled standalone outbox/BullMQ worker                               |
+| `pnpm ai:probe`                         | Build and verify real configured generation/tool/embedding capabilities        |
+| `pnpm ai:evaluate`                      | Build and run the opt-in 22-case provider benchmark                            |
 
 Default unit/HTTP tests skip `.env` and do not access a shared database. The DB
 suite accepts only explicit loopback `handled_test` settings. See the setup
 guide for the disposable PostgreSQL command, identity fixture limits and safe
 seed instructions. Synthetic business records are not evidence of actual AI,
-provider, worker or browser execution.
+provider or browser execution. The core DB suite includes actual Redis transport
+checks when `TEST_REDIS_URL` is supplied; see the verification record for boundaries.
 
 Inject the single DatabaseModule/PrismaService. Transaction callbacks contain
 only database effects; known serialization conflicts have bounded retries.

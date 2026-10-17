@@ -28,22 +28,34 @@ Paths are relative to the repository root, so run built servers from the root an
 
 ## Feature settings
 
-Auth and public-intake runtimes are implemented by Step 2. Read the [foundation setup guide](backend-foundation-setup.md) for private identity function grants, token rotation and scoped fixture configuration. Provider/worker keys remain reserved for later roadmap steps.
+Auth and public-intake runtimes are implemented by Step 2. Read the [foundation setup guide](backend-foundation-setup.md) for private identity function grants, token rotation and scoped fixture configuration. Provider and worker runtimes are connected; use the [Gemini quickstart](gemini-quickstart.md) and [core runbook](backend-core-setup.md).
 
-| Keys                                                                                | Owner / contract                                                                                         |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `SUPABASE_URL`, `SUPABASE_JWT_ISSUER`, `SUPABASE_JWKS_URL`, `SUPABASE_JWT_AUDIENCE` | Auth; HTTPS trusted endpoints, audience defaults to authenticated                                        |
-| `REDIS_URL`                                                                         | D; redis/rediss URI; configure durable worker deployment                                                 |
-| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL`                          | Lead/C; optional server-side configuration; never hardcode model IDs                                     |
-| `AI_PROVIDER`, `AI_MODEL`, `AI_PROMPT_VERSION`                                      | Lead; proposed provider-neutral keys; define precedence against provider-specific keys in the adapter PR |
-| `AI_TIMEOUT_MS`, `AI_MAX_RETRIES`                                                   | Lead; 30000 and 2 defaults, bounded by validation                                                        |
-| `EMBEDDING_DIMENSION`                                                               | C; 768 only, matching the planned vector contract                                                        |
-| `RAG_TOP_K`                                                                         | C; 5, maximum 20                                                                                         |
-| `INVESTIGATION_CONCURRENCY`                                                         | Lead/D; 2, maximum 4                                                                                     |
-| `ACTION_SIMULATION`                                                                 | D; true required, false rejected for MVP safety                                                          |
-| `SUPPORT_FORM_TOKEN_PEPPER`                                                         | Ticket; private HMAC pepper, at least 32 characters; absent disables intake                              |
+| Keys                                                                                | Owner / contract                                                                 |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `SUPABASE_URL`, `SUPABASE_JWT_ISSUER`, `SUPABASE_JWKS_URL`, `SUPABASE_JWT_AUDIENCE` | Auth; HTTPS trusted endpoints, audience defaults to authenticated                |
+| `REDIS_URL`                                                                         | D; redis/rediss URI; configure durable worker deployment                         |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL`                          | Lead/C; optional server-side configuration; never hardcode model IDs             |
+| `AI_PROVIDER`, `AI_MODEL`, `AI_PROMPT_VERSION`                                      | Lead; gemini, explicit model and prompt version; AI_MODEL overrides GEMINI_MODEL |
+| `AI_TIMEOUT_MS`, `AI_MAX_RETRIES`                                                   | Lead; 30000 and 2 defaults, bounded by validation                                |
+| `EMBEDDING_DIMENSION`                                                               | C; 768 only, matching the planned vector contract                                |
+| `RAG_TOP_K`                                                                         | C; 5, maximum 20                                                                 |
+| `INVESTIGATION_CONCURRENCY`                                                         | Lead/D; 2, maximum 4                                                             |
+| `ACTION_SIMULATION`                                                                 | D; true required, false rejected for MVP safety                                  |
+| `SUPPORT_FORM_TOKEN_PEPPER`                                                         | Ticket; private HMAC pepper, at least 32 characters; absent disables intake      |
 
-The tech registry prefers an environment-based provider abstraction; Resolve AI compatibility remains unverified. This starter does not call any model or promise a model/version/free quota. Do not enable real payment/provider writes by changing an environment flag.
+The implemented adapter uses the official Google GenAI SDK. Provider operations
+require `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, a generation model, an embedding
+model and a prompt version. The dated `.env.example` selects `gemini-3.8-flash`
+and `gemini-embedding-2`; models remain configurable and availability must be
+probed with the actual key. Resolve AI compatibility remains unverified. No free
+quota or measured accuracy is promised. Real external writes are outside scope.
+
+`AI_TIMEOUT_MS` is 1000–120000; `AI_MAX_RETRIES` is 0–3. SDK automatic retries are
+disabled in favor of the adapter's bounded transient retries. Embedding 2 uses
+query/document content prefixes rather than the unsupported legacy `taskType`;
+768-dimensional finite nonzero results are normalized. Changing the embedding
+model requires reindexing current published revisions. Read tools and provider
+outputs are strictly validated; raw prompts and provider errors are not logged.
 
 For production-wide rate limiting or request tracing, add the appropriate shared store/trace implementation through a reviewed infrastructure change. The existing limiter is in-memory and traceId is a correlation ID; neither implies a distributed runtime is already configured.
 

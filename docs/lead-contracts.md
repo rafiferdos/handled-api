@@ -1,6 +1,8 @@
-# Lead API and data contracts — Step 1
+# Lead API and data contracts
 
-Status: **implemented contract-authoring slice; producer/consumer review pending**.
+Updated **17 October 2026**. Step 1 supplied the contracts; the connected core now
+uses the shared route metadata in production controllers. See the
+[core runbook](backend-core-setup.md) and [verification record](backend-core-verification.md).
 Primary Jira: [SCRUM-11](https://team-singularity.atlassian.net/browse/SCRUM-11).
 Related: SCRUM-12, SCRUM-109, SCRUM-113 and SCRUM-115.
 
@@ -9,8 +11,8 @@ These contracts follow the [14 October canonical plan](https://app.notion.com/p/
 and [release gates](https://app.notion.com/p/3f94ab5df1448151bbb0e7814fddfb38).
 The older [backend blueprint](https://app.notion.com/p/3f24ab5df144818082f6f5132625a841)
 and [ERD](https://app.notion.com/p/3f34ab5df14481bd80d4f4284292b347)
-provide supplemental field/tool references. Contract choices below need consumer
-review before G0 freeze; no owner approval is implied.
+provide supplemental field/tool references. The current solo workflow supersedes
+the historical owner waiting gate; external stakeholder sign-off is not implied.
 
 ## Implemented artifacts
 
@@ -24,16 +26,16 @@ review before G0 freeze; no owner approval is implied.
   and proposal/decision/action-admission responses.
 - `test/lead-contracts.e2e-spec.ts`: isolated HTTP/OpenAPI contract fixtures.
 
-No business controller, DI producer implementation, provider call, table,
-migration, action or queue worker is registered by this slice. The shipped API
-continues to expose only its existing information/probe endpoints. Schema/type
-validity does not prove identity, evidence truth, durable admission or an effect.
+The original Step 1 slice was contracts only. Current production services now
+implement these endpoints, concrete scoped tools, provider calls and durable
+worker/action admission. Local integration evidence remains distinct from live
+provider and hosted acceptance.
 
 ## Backend endpoint inventory
 
 Every path below is relative to `/api/v1`. UUID parameters use `workspaceId`,
 `ticketId`, `investigationId` or `proposalId`. All are private, workspace-scoped,
-**CORE contract proposals**. Future handlers use `@LeadEndpoint(name)` on a root
+**implemented CORE contracts**. Handlers use `@LeadEndpoint(name)` on a root
 `@Controller()` and attach the corresponding `@Param`, `@Query` and `@Body` DTOs.
 The decorator binds the route, roles, HTTP status and shared Swagger helpers.
 
@@ -49,9 +51,10 @@ The decorator binds the route, roles, HTTP status and shared Swagger helpers.
 | `rejectProposal`           | POST `/workspaces/:workspaceId/proposals/:proposalId/reject`            | ADMIN/AGENT | expectedVersion + reason                             | 200 persisted human decision                         |
 | `escalateProposal`         | POST `/workspaces/:workspaceId/proposals/:proposalId/escalate`          | ADMIN/AGENT | expectedVersion + reason                             | 200 persisted human decision                         |
 
-All proposed Lead POST operations require `Idempotency-Key`; this includes the
-canonical minimum of trigger/approval/retry and extends admission consistency to
-edit/reject/escalate. Every response reuses `{data,requestId}`; lists additionally
+Approval requires `Idempotency-Key`. Active investigation admission coalesces
+onto the existing QUEUED/RUNNING run; edit/reject/escalate use exact-version
+conflicts. Terminal retry creates a new run. This supersedes Step 1's proposed
+header requirement on all mutations. Every response reuses `{data,requestId}`; lists additionally
 include `{meta:{page,limit,total,hasNext}}`. Errors reuse the existing typed
 `{error:{code,message,details},requestId,timestamp}` envelope.
 
@@ -59,9 +62,9 @@ GET of a missing/currently unavailable standalone proposal returns the existing
 404 error; an investigation detail may include `proposal:null` before generation.
 No response advertises an executed action when only queued admission is known.
 
-## Version, retry and idempotency decisions proposed for review
+## Version, retry and idempotency behavior
 
-1. All four decision/edit requests carry a positive safe-integer expectedVersion;
+1. All four decision/edit requests carry an integer expectedVersion from 1 to 2147483647;
    strings, null, fractions and unknown fields are rejected. A stale version
    returns `409 PROPOSAL_VERSION_CONFLICT` before any effect.
 2. Edit replaces the complete editable content and creates a new version. Clients
@@ -73,16 +76,16 @@ No response advertises an executed action when only queued admission is known.
 4. Scope deduplication by workspace, authenticated actor, operation and target.
    Recheck current authorization before returning saved private results. D also
    needs business-effect uniqueness across different keys/approvals/worker retries.
-5. Another key while an investigation is QUEUED/RUNNING returns
-   `409 INVALID_STATE_TRANSITION`. Retry is for FAILED/NEEDS_REVIEW and creates a
+5. Admission while an investigation is QUEUED/RUNNING returns that active run.
+   Retry is for FAILED/NEEDS_REVIEW and creates a
    new run; it does not reopen the old run.
 6. A transaction must bind the exact human decision/version, action admission,
-   audit and outbox. `ApprovedActionAdmissionPort` is a proposed boundary, not a
-   transaction implementation; the Lead/D transaction protocol is still a review
-   gate. D must reload authoritative state rather than trust serialized metadata.
+   audit and outbox. Production `ProposalService` and `ActionPolicy` compose
+   these writes in the caller-owned identity transaction. The action worker
+   reloads authoritative state rather than trusting serialized metadata.
 
-These are documented choices to review, not independently approved ADRs or
-implemented durability guarantees.
+Concurrency, source/policy freshness, idempotency and worker effects are covered
+by disposable-DB integration tests described in the verification record.
 
 ## AI and action payload boundaries
 
@@ -166,7 +169,7 @@ Implementation references: [Zod schemas](https://zod.dev/api),
 [Nest validation](https://docs.nestjs.com/techniques/validation),
 [Nest OpenAPI](https://docs.nestjs.com/openapi/types-and-parameters).
 
-## Consumer review and next dependency gate
+## Domain boundaries and acceptance
 
 | Reviewer | Required sign-off / later producer                                                                             |
 | -------- | -------------------------------------------------------------------------------------------------------------- |
@@ -175,13 +178,8 @@ Implementation references: [Zod schemas](https://zod.dev/api),
 | C        | Published tenant search, immutable source/version/hash resolution and retrieval metadata                       |
 | D        | Exact-version approved command, transaction coordination, durable idempotency/outbox/audit and queue admission |
 
-No peer/consumer sign-off is claimed. Full SCRUM-11 contract freeze and SCRUM-12
-real tenant-safety review remain open. Code-only microtasks stay In Review until
-the relevant reviewer accepts their evidence.
-
-Step 2's real schema, A/B foundation and Lead persistence now exist. The former
-owner dependency pause is superseded by the requester's solo authorization.
-Follow the [current backend roadmap](solo-backend-steps.md) and
-[foundation setup](backend-foundation-setup.md). Actual queue/provider/knowledge
-orchestration, public Lead endpoints and policy/action admission remain their
-later numbered steps; persistence alone does not prove an AI/action result.
+The core received an independent whole-branch review, followed by reproduced
+queue regression fixes. Historical domain-owner approvals are not claimed.
+Follow the [current backend roadmap](solo-backend-steps.md) for remaining live
+provider, target security and hosted acceptance. Concrete runtime services now
+implement the producer/consumer boundaries; persistence alone is not their proof.

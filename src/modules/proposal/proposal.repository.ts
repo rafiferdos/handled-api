@@ -46,7 +46,7 @@ const sourcesSchema = z
       (v) => v.sourceType !== 'KNOWLEDGE' || v.documentVersion <= 2147483647,
     ),
   );
-function sourceProjection(s: ProposalSource): EvidenceSource {
+export function sourceProjection(s: ProposalSource): EvidenceSource {
   const base = {
     sourceRefId: s.sourceRefId,
     title: s.title,
@@ -160,60 +160,69 @@ export class ProposalRepository {
     });
   }
   revise(actor: WorkspaceActor, id: string, input: z.input<typeof editSchema>) {
+    return this.uow.runAs(actor, (tx) =>
+      this.reviseInTransaction(tx, actor, id, input),
+    );
+  }
+  async reviseInTransaction(
+    tx: IdentityTransaction,
+    actor: WorkspaceActor,
+    id: string,
+    input: z.input<typeof editSchema>,
+  ) {
+    assertTransactionIdentity(tx, actor);
     const data = parseContract(editSchema, input);
-    return this.uow.runAs(actor, async (tx) => {
-      const member = await assertWorkspaceActor(tx, actor, WRITERS);
-      const old = await stored(tx, actor.workspaceId, id);
-      if (
-        old.version !== data.expectedVersion ||
-        old.status !== 'READY' ||
-        old.version === 2147483647
-      )
-        throw new AppException('PROPOSAL_VERSION_CONFLICT');
-      const evidence = await sourceRows(tx, old),
-        previous = project(old, evidence);
-      const output = parseContract(proposalOutputSchema, {
-        category: previous.category,
-        summary: data.summary,
-        replyDraft: data.replyDraft,
-        recommendation: data.recommendation,
-        confidence: data.recommendation === null ? 'LOW' : previous.confidence,
-        missingFacts: previous.missingFacts,
-        evidenceRefs: previous.evidenceRefs,
-      });
-      await tx.proposalDecision.create({
-        data: {
-          workspaceId: actor.workspaceId,
-          proposalId: old.id,
-          proposalVersion: old.version,
-          kind: 'EDITED',
-          actorUserId: actor.userId,
-          actorMembershipId: member.id,
-          actorSessionId: actor.sessionId,
-          requestId: actor.requestId,
-        },
-      });
-      await tx.proposal.update({
-        where: { id: old.id },
-        data: { status: 'SUPERSEDED' },
-      });
-      const current = await this.persist(
-        tx,
-        actor,
-        old.ticketId,
-        old.investigationId,
-        old.version + 1,
-        output,
-        previous.sources,
-      );
-      await writeAudit(tx, actor, {
-        entityType: 'proposal',
-        entityId: current.id,
-        eventType: 'proposal.revised',
-        metadata: { previousProposalId: old.id, previousVersion: old.version },
-      });
-      return current;
+    const member = await assertWorkspaceActor(tx, actor, WRITERS);
+    const old = await stored(tx, actor.workspaceId, id);
+    if (
+      old.version !== data.expectedVersion ||
+      old.status !== 'READY' ||
+      old.version === 2147483647
+    )
+      throw new AppException('PROPOSAL_VERSION_CONFLICT');
+    const evidence = await sourceRows(tx, old),
+      previous = project(old, evidence);
+    const output = parseContract(proposalOutputSchema, {
+      category: previous.category,
+      summary: data.summary,
+      replyDraft: data.replyDraft,
+      recommendation: data.recommendation,
+      confidence: data.recommendation === null ? 'LOW' : previous.confidence,
+      missingFacts: previous.missingFacts,
+      evidenceRefs: previous.evidenceRefs,
     });
+    await tx.proposalDecision.create({
+      data: {
+        workspaceId: actor.workspaceId,
+        proposalId: old.id,
+        proposalVersion: old.version,
+        kind: 'EDITED',
+        actorUserId: actor.userId,
+        actorMembershipId: member.id,
+        actorSessionId: actor.sessionId,
+        requestId: actor.requestId,
+      },
+    });
+    await tx.proposal.update({
+      where: { id: old.id },
+      data: { status: 'SUPERSEDED' },
+    });
+    const current = await this.persist(
+      tx,
+      actor,
+      old.ticketId,
+      old.investigationId,
+      old.version + 1,
+      output,
+      previous.sources,
+    );
+    await writeAudit(tx, actor, {
+      entityType: 'proposal',
+      entityId: current.id,
+      eventType: 'proposal.revised',
+      metadata: { previousProposalId: old.id, previousVersion: old.version },
+    });
+    return current;
   }
   /** Internal persistence only. The caller must perform policy/current-ticket
    * admission and write any action/outbox in this SAME transaction (Step 9). */

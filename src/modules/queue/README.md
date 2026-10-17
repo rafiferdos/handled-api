@@ -1,13 +1,8 @@
-# Queue module
+# Durable queue
 
-Owner slot: **Person D**. Scope: Redis/BullMQ, outbox dispatch, retries and worker lifecycle.
+Transactional PostgreSQL outbox intents feed the standalone BullMQ worker. Capacity-aware claims, one-time execution tokens, heartbeat leases, bounded retries and current-lease transaction fences protect work and effects. ADMIN job reads/retry recover exhausted intents. The API does not start this worker.
 
-Jira entry points: SCRUM-65 / SCRUM-71. Confirm the current task and assignee in Jira before starting.
-
-Schema file: `prisma/models/operations.prisma`. Models remain unimplemented in the starter.
-
-Use common queue names/payloads; business state + outbox belong in one DB transaction. Header validation and Redis job IDs alone do not prevent duplicate effects.
-
-Add controllers/services/DTOs and colocated unit tests here; register them in this module file. Existing module registration is already in `FeaturesModule`, so normal domain work does not require editing `main.ts` or `AppModule`. Export only explicit consumer services.
-
-Follow [ownership](../../../docs/ownership.md), [feature development](../../../docs/feature-development.md) and [contributor workflow](../../../CONTRIBUTING.md). HTTP controllers return domain data; shared infrastructure wraps responses and errors. These module notes do not mean the feature is implemented.
+See the [core setup and recovery guide](../../../docs/backend-core-setup.md),
+[verification evidence](../../../docs/backend-core-verification.md) and
+[solo backend roadmap](../../../docs/solo-backend-steps.md). Historical A/B/C/D
+labels are module boundaries under solo execution; only Lead Jira items are updated.
