@@ -23,7 +23,7 @@ services:
     numInstances: 1
     autoDeployTrigger: off
     buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build
-    startCommand: pnpm start:preview
+    startCommand: node dist/preview.js
     healthCheckPath: /ready
     envVars:
       - key: NODE_VERSION
