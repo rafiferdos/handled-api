@@ -10,8 +10,12 @@ import { ProposalResponseDto } from '../../proposal/dto/proposal-response.dto.js
 
 export class InvestigationAdmissionResponseDto {
   @ApiProperty({ format: 'uuid' }) readonly investigationId: string;
-  @ApiProperty({ enum: [InvestigationStatus.QUEUED] })
-  readonly status: InvestigationStatus.QUEUED;
+  @ApiProperty({
+    enum: [InvestigationStatus.QUEUED, InvestigationStatus.RUNNING],
+    description:
+      'An active run is coalesced; this is admission, not completion.',
+  })
+  readonly status: InvestigationStatus.QUEUED | InvestigationStatus.RUNNING;
 }
 
 export class InvestigationSummaryDto {

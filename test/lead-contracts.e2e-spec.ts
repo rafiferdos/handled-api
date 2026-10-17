@@ -41,7 +41,6 @@ class LeadContractFixtureController {
   start(
     @Param() _params: TicketInvestigationParamsDto,
     @Body(new EmptyInvestigationBodyPipe()) _body: unknown,
-    @IdempotencyKey() _key: string,
   ) {
     return { investigationId: resourceId, status: 'QUEUED' };
   }
@@ -321,18 +320,22 @@ describe('Lead contract HTTP boundary (test doubles, not domain integration)', (
   });
 });
 
-it('does not expose contract fixture routes in the shipped application', async () => {
+it('ships real Lead routes without registering the transport fixture controller', async () => {
   const app = await testApp(false, () => WorkspaceRole.AGENT);
   try {
     const response = await request(app.getHttpServer())
       .get('/docs-json')
       .expect(200);
     expect(
-      Object.keys(response.body.paths).some(
-        (path) =>
-          path.includes('/proposals/') || path.includes('/investigations'),
-      ),
-    ).toBe(false);
+      response.body.paths[
+        '/api/v1/workspaces/{workspaceId}/proposals/{proposalId}/approve'
+      ].post.operationId,
+    ).toBe('approveProposal');
+    expect(
+      response.body.paths['/api/v1/workspaces/{workspaceId}/investigations'].get
+        .operationId,
+    ).toBe('listInvestigations');
+    expect(() => app.get(LeadContractFixtureController)).toThrow();
   } finally {
     await app.close();
   }

@@ -43,6 +43,7 @@ interface EndpointContract {
   readonly response: Type<unknown>;
   readonly body?: Type<unknown>;
   readonly paginated?: boolean;
+  readonly idempotent?: boolean;
   readonly summary: string;
   readonly description?: string;
 }
@@ -52,8 +53,7 @@ const write = { method: 'POST', roles: LeadWriteRoles } as const;
 const investigations = 'workspaces/:workspaceId/investigations';
 const proposals = 'workspaces/:workspaceId/proposals/:proposalId';
 
-// CONTRACTS ONLY: applying a decorator in a future controller binds a route.
-// No production controller imports this catalog in Step 1.
+// Shared transport contract, now consumed by the production Lead controllers.
 export const LeadEndpoints = {
   startInvestigation: {
     ...write,
@@ -62,7 +62,7 @@ export const LeadEndpoints = {
     response: InvestigationAdmissionResponseDto,
     summary: 'Start an investigation',
     description:
-      'Empty body. Same idempotency key + same request replays the original admission. Another key while an active run exists returns 409 INVALID_STATE_TRANSITION. Durable admission is required before 202.',
+      'Empty body. Concurrent requests coalesce to the existing active run. Durable DB admission and outbox are required before 202; inspect REST state for completion.',
   },
   listInvestigations: {
     ...read,
@@ -84,7 +84,7 @@ export const LeadEndpoints = {
     response: InvestigationAdmissionResponseDto,
     summary: 'Create a new retry run',
     description:
-      'Empty body. Retry a FAILED or NEEDS_REVIEW run by creating a new run; never mutate/reopen a terminal run. An active run conflicts with 409 INVALID_STATE_TRANSITION.',
+      'Empty body. Retry a FAILED or NEEDS_REVIEW run by creating a new run; never mutate/reopen a terminal run. Concurrent admission coalesces to the active run.',
   },
   getInvestigationProposal: {
     ...read,
@@ -106,6 +106,7 @@ export const LeadEndpoints = {
     ...write,
     path: proposals + '/approve',
     status: 202,
+    idempotent: true,
     body: ApproveProposalRequestDto,
     response: ActionAdmissionResponseDto,
     summary: 'Approve the exact current proposal version',
@@ -177,7 +178,7 @@ export function LeadEndpoint(name: LeadEndpointName): MethodDecorator {
     ApiErrorResponses(...(mutation ? writeErrors : readErrors)),
     ...(mutation
       ? [
-          RequireIdempotencyKey(),
+          ...(contract.idempotent ? [RequireIdempotencyKey()] : []),
           ApiBody(
             contract.body
               ? { type: contract.body }

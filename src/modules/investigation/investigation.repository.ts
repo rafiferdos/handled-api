@@ -16,6 +16,7 @@ import { rethrowDatabaseError } from '../../common/database/database-errors.js';
 import { parseContract } from '../../common/validation/parse-contract.js';
 import { AppException } from '../../common/errors/app.exception.js';
 import type { PaginationQueryDto } from '../../common/dto/pagination-query.dto.js';
+import type { InvestigationListQueryDto } from './dto/investigation-request.dto.js';
 import { paginated, paginationBounds } from '../../common/utils/pagination.js';
 import { investigationTransitions } from '../ai/contracts/workflow.contracts.js';
 import { classificationSchema } from '../ai/contracts/proposal-output.schema.js';
@@ -153,6 +154,29 @@ export class InvestigationRepository {
       await assertWorkspaceActor(tx, actor);
       await requireTicket(tx, actor.workspaceId, ticketId);
       const where = { workspaceId: actor.workspaceId, ticketId };
+      return paginated(
+        (
+          await tx.investigationRun.findMany({
+            where,
+            orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+            ...paginationBounds(query),
+          })
+        ).map(runProjection),
+        await tx.investigationRun.count({ where }),
+        query,
+      );
+    });
+  }
+  listAll(actor: WorkspaceActor, query: InvestigationListQueryDto) {
+    return this.uow.runAs(actor, async (tx) => {
+      await assertWorkspaceActor(tx, actor);
+      if (query.ticketId)
+        await requireTicket(tx, actor.workspaceId, query.ticketId);
+      const where = {
+        workspaceId: actor.workspaceId,
+        ...(query.ticketId ? { ticketId: query.ticketId } : {}),
+        ...(query.status ? { status: query.status } : {}),
+      };
       return paginated(
         (
           await tx.investigationRun.findMany({

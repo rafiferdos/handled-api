@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { WorkspaceScoped } from '../../common/decorators/access.decorator.js';
 import { CurrentActor } from '../../common/decorators/actor.decorator.js';
@@ -17,18 +8,15 @@ import { PaginationQueryDto } from '../../common/dto/pagination-query.dto.js';
 import { ApiSuccessResponse } from '../../common/decorators/api-success-response.decorator.js';
 import { InvestigationService } from './investigation.service.js';
 import { InvestigationRepository } from './investigation.repository.js';
-import {
-  InvestigationAdmissionResponseDto,
-  InvestigationSummaryDto,
-  InvestigationDetailDto,
-} from './dto/investigation-response.dto.js';
+import { InvestigationSummaryDto } from './dto/investigation-response.dto.js';
+import { LeadEndpoint } from '../ai/contracts/lead-endpoints.js';
+import { InvestigationListQueryDto } from './dto/investigation-request.dto.js';
 import { EmptyInvestigationBodyPipe } from './dto/empty-investigation-body.pipe.js';
-import { ProposalResponseDto } from '../proposal/dto/proposal-response.dto.js';
 @ApiTags('Investigations')
 @ApiBearerAuth()
 @WorkspaceScoped()
 @ApiParam({ name: 'workspaceId', format: 'uuid' })
-@Controller('workspaces/:workspaceId')
+@Controller()
 export class InvestigationController {
   constructor(
     @Inject(InvestigationService)
@@ -36,9 +24,7 @@ export class InvestigationController {
     @Inject(InvestigationRepository)
     private readonly runs: InvestigationRepository,
   ) {}
-  @Post('tickets/:ticketId/investigations')
-  @HttpCode(202)
-  @ApiSuccessResponse(InvestigationAdmissionResponseDto, { status: 202 })
+  @LeadEndpoint('startInvestigation')
   start(
     @CurrentActor() actor: WorkspaceActor,
     @Param('ticketId', uuidPipe) id: string,
@@ -46,7 +32,7 @@ export class InvestigationController {
   ) {
     return this.service.start(actor, id);
   }
-  @Get('tickets/:ticketId/investigations')
+  @Get('workspaces/:workspaceId/tickets/:ticketId/investigations')
   @ApiSuccessResponse(InvestigationSummaryDto, { paginated: true })
   list(
     @CurrentActor() actor: WorkspaceActor,
@@ -55,17 +41,21 @@ export class InvestigationController {
   ) {
     return this.runs.list(actor, id, q);
   }
-  @Get('investigations/:investigationId')
-  @ApiSuccessResponse(InvestigationDetailDto)
+  @LeadEndpoint('listInvestigations')
+  all(
+    @CurrentActor() actor: WorkspaceActor,
+    @Query() q: InvestigationListQueryDto,
+  ) {
+    return this.runs.listAll(actor, q);
+  }
+  @LeadEndpoint('getInvestigation')
   detail(
     @CurrentActor() actor: WorkspaceActor,
     @Param('investigationId', uuidPipe) id: string,
   ) {
     return this.service.detail(actor, id);
   }
-  @Post('investigations/:investigationId/retry')
-  @HttpCode(202)
-  @ApiSuccessResponse(InvestigationAdmissionResponseDto, { status: 202 })
+  @LeadEndpoint('retryInvestigation')
   retry(
     @CurrentActor() actor: WorkspaceActor,
     @Param('investigationId', uuidPipe) id: string,
@@ -73,8 +63,7 @@ export class InvestigationController {
   ) {
     return this.service.retry(actor, id);
   }
-  @Get('investigations/:investigationId/proposal')
-  @ApiSuccessResponse(ProposalResponseDto)
+  @LeadEndpoint('getInvestigationProposal')
   proposal(
     @CurrentActor() actor: WorkspaceActor,
     @Param('investigationId', uuidPipe) id: string,
