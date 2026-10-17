@@ -16,7 +16,6 @@ import {
 import { ProposalResponseDto } from './dto/proposal-response.dto.js';
 import { LeadEndpoint } from '../ai/contracts/lead-endpoints.js';
 @ApiTags('Proposals')
-@ApiBearerAuth()
 @WorkspaceScoped()
 @ApiParam({ name: 'workspaceId', format: 'uuid' })
 @Controller()
@@ -26,6 +25,7 @@ export class ProposalController {
     @Inject(ProposalRepository) private readonly proposals: ProposalRepository,
   ) {}
   @Get('workspaces/:workspaceId/proposals/:proposalId')
+  @ApiBearerAuth()
   @ApiSuccessResponse(ProposalResponseDto)
   detail(
     @CurrentActor() actor: WorkspaceActor,

@@ -13,7 +13,6 @@ import { LeadEndpoint } from '../ai/contracts/lead-endpoints.js';
 import { InvestigationListQueryDto } from './dto/investigation-request.dto.js';
 import { EmptyInvestigationBodyPipe } from './dto/empty-investigation-body.pipe.js';
 @ApiTags('Investigations')
-@ApiBearerAuth()
 @WorkspaceScoped()
 @ApiParam({ name: 'workspaceId', format: 'uuid' })
 @Controller()
@@ -33,6 +32,7 @@ export class InvestigationController {
     return this.service.start(actor, id);
   }
   @Get('workspaces/:workspaceId/tickets/:ticketId/investigations')
+  @ApiBearerAuth()
   @ApiSuccessResponse(InvestigationSummaryDto, { paginated: true })
   list(
     @CurrentActor() actor: WorkspaceActor,
