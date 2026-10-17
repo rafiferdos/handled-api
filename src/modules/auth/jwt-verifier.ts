@@ -65,7 +65,9 @@ export class JwtVerifier {
       if (
         error instanceof errors.JWKSTimeout ||
         (error instanceof errors.JOSEError &&
-          ['ERR_JWKS_INVALID', 'ERR_JWK_INVALID', 'ERR_JOSE_GENERIC'].includes(error.code)) ||
+          ['ERR_JWKS_INVALID', 'ERR_JWK_INVALID', 'ERR_JOSE_GENERIC'].includes(
+            error.code,
+          )) ||
         !(error instanceof errors.JOSEError)
       )
         throw new AppException('DEPENDENCY_UNAVAILABLE');
