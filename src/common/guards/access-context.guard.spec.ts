@@ -107,6 +107,12 @@ describe('AccessContextGuard', () => {
     });
   });
 
+  it('normalizes case-equivalent workspace UUIDs', async () => {
+    request.params.workspaceId = workspaceId.toUpperCase();
+    expect(await activate('scopedRoute')).toBe(true);
+    expect(resolveMembership).toHaveBeenCalledWith('user', workspaceId);
+  });
+
   it('rejects a missing workspace on role-scoped routes', async () => {
     await expect(activate('adminRoute')).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',

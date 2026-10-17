@@ -39,7 +39,11 @@ export class AccessContextGuard implements CanActivate {
       WORKSPACE_SCOPED,
       targets,
     );
-    const workspaceId = request.params.workspaceId;
+    const rawWorkspaceId = request.params.workspaceId;
+    const workspaceId =
+      typeof rawWorkspaceId === 'string'
+        ? rawWorkspaceId.toLowerCase()
+        : rawWorkspaceId;
 
     if (this.reflector.getAllAndOverride<boolean>(PUBLIC_ROUTE, targets)) {
       // A public workspaceSlug intake route needs its own abuse protection.

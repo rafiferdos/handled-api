@@ -82,6 +82,14 @@ export function validateEnvironment(
     abortEarly: false,
   });
 
+  const partialAuth =
+    (config.SUPABASE_JWT_ISSUER || config.SUPABASE_JWKS_URL) &&
+    !config.SUPABASE_URL;
+  if (partialAuth)
+    throw new Error(
+      'Environment configuration invalid: SUPABASE_URL (required for auth verification)',
+    );
+
   if (error) {
     // Joi's raw message may quote a malformed secret. Report keys/types only.
     const problems = error.details.map(
