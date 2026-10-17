@@ -1,7 +1,7 @@
 # Free hosted deployment verification
 
 Verified **18 October 2026 (Asia/Dhaka)**. This records the approved Free preview;
-real model/business acceptance is still pending.
+full hosted AI/business acceptance is still pending.
 
 ## Live resources
 
@@ -16,7 +16,12 @@ real model/business acceptance is still pending.
   Application source: `8f0043396282fbaac024d05990b00c45060566a8`.
 - Initial deploy `dep-db9tbh4s728c73cvakbg` reached `live` on that exact commit.
 - Direct-Node runtime deploy `dep-db9tdt2jnfac73dirdeg` reached `live` on the same
-  application commit. This is the current deploy.
+  application commit.
+- [PR #9](https://github.com/rafiferdos/handled-api/pull/9) merged the Gemini
+  latency fix. Current deploy `dep-db9tnebncjis73akkib0` reached `live` at
+  `2026-10-17T20:35:50Z`, with exact application source
+  `9334b61ac54ca866b2eef5d683c6f9e0c6ac7240`. Public checks after it became live
+  returned 200/200/401 for health/readiness/anonymous private access.
 
 No paid resource, compute upgrade, workspace subscription, or provider billing
 plan was activated. Account-wide build/bandwidth billing controls are not exposed
@@ -96,7 +101,10 @@ queue-connection, outbox-dispatch, or supervisor-failure errors.
   Gemini 3, the standard built provider probe passed real classification, two
   validated read-tool calls, and a 768-dimension embedding. These calls ran from
   the local verification environment against the real Free provider, not from
-  the hosted worker. Follow-up `pnpm check`: 147 unit/process + 37 HTTP tests pass.
+  the hosted worker. Cloud provider settings and the private key match the
+  successful probe, verified without printing secrets. Follow-up `pnpm check`:
+  147 unit/process + 37 HTTP tests pass. The fix is deployed as recorded above;
+  this is not proof of hosted end-to-end AI/business processing.
 - Real hosted policy indexing, investigation/citations, human approval, simulated
   effect/audit, duplicate effects, and frontend acceptance remain unverified.
 - A 15-minute idle/wake exercise and a real Redis-data-loss exercise remain
