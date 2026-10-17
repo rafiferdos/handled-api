@@ -1,12 +1,4 @@
-import { Global, Module } from '@nestjs/common';
-import { AccessContextResolver } from '../../common/contracts/access-context.js';
-import { DenyAccessContextResolver } from './deny-access-context.resolver.js';
+import { Module } from '@nestjs/common';
 
-@Global()
-@Module({
-  providers: [
-    { provide: AccessContextResolver, useClass: DenyAccessContextResolver },
-  ],
-  exports: [AccessContextResolver],
-})
+@Module({})
 export class AuthModule {}

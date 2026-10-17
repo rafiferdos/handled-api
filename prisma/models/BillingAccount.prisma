@@ -1,0 +1,20 @@
+// ERD: BillingAccount. SQL-only constraints below require a reviewed migration.
+
+model BillingAccount {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String @unique @db.Uuid
+  provider String @db.VarChar(80)
+  billingProviderCustomerId String? @db.VarChar(255)
+  billingEmail String @db.VarChar(255)
+  legalCountry String? @db.Char(2)
+  taxState String? @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  subscriptions WorkspaceSubscription[]
+  @@unique([workspaceId, id])
+  @@unique([provider, billingProviderCustomerId])
+  // check_1: CHECK (char_length("billingEmail") > 0)
+  // check_2: CHECK ("updatedAt" >= "createdAt")
+}

@@ -1,0 +1,49 @@
+// ERD: DataAccessRequest. SQL-only constraints below require a reviewed migration.
+
+model DataAccessRequest {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String @db.Uuid
+  type FutureDataAccessType
+  requestedByUserId String? @db.Uuid
+  requesterEmail String? @db.VarChar(255)
+  verificationStatus FutureRequesterVerification @default(PENDING)
+  requesterVerificationRef String? @db.VarChar(255)
+  verifiedAt DateTime? @db.Timestamptz(6)
+  status FutureDataAccessStatus @default(REQUESTED)
+  deadline DateTime @db.Timestamptz(6)
+  completedAt DateTime? @db.Timestamptz(6)
+  /// Pending Person D: composite FK (workspaceId, auditEventId) -> AuditEvent(workspaceId, id).
+  auditEventId String? @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  requester Profile? @relation(fields: [requestedByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([workspaceId, id])
+  @@index([workspaceId, status, deadline])
+  // check_1: CHECK ("requestedByUserId" IS NOT NULL OR "requesterEmail" IS NOT NULL)
+  // check_2: CHECK ("verificationStatus" <> 'VERIFIED' OR ("verifiedAt" IS NOT NULL AND "requesterVerificationRef" IS NOT NULL))
+  // check_3: CHECK ("status" NOT IN ('IN_PROGRESS', 'COMPLETED') OR "verificationStatus" = 'VERIFIED')
+  // check_4: CHECK ("deadline" >= "createdAt")
+  // check_5: CHECK ("completedAt" IS NULL OR "completedAt" >= "createdAt")
+  // check_6: CHECK ("updatedAt" >= "createdAt")
+}
+
+enum FutureDataAccessType {
+  EXPORT
+  DELETE
+}
+
+enum FutureRequesterVerification {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum FutureDataAccessStatus {
+  REQUESTED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELED
+}

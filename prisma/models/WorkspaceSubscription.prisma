@@ -1,0 +1,36 @@
+// ERD: WorkspaceSubscription. SQL-only constraints below require a reviewed migration.
+
+model WorkspaceSubscription {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String @db.Uuid
+  billingAccountId String @db.Uuid
+  planId String @db.Uuid
+  provider String @db.VarChar(80)
+  providerSubscriptionRef String @db.VarChar(255)
+  status FutureWorkspaceSubscriptionStatus
+  currentPeriodStart DateTime @db.Timestamptz(6)
+  currentPeriodEnd DateTime @db.Timestamptz(6)
+  renewsAt DateTime? @db.Timestamptz(6)
+  cancelAtPeriodEnd Boolean @default(false)
+  canceledAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  billingAccount BillingAccount @relation(fields: [workspaceId, billingAccountId], references: [workspaceId, id], onDelete: Restrict, onUpdate: Restrict)
+  plan SaaSPlan @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([workspaceId, id])
+  @@unique([provider, providerSubscriptionRef])
+  @@index([workspaceId, status, currentPeriodEnd])
+  // check_1: CHECK ("currentPeriodEnd" > "currentPeriodStart")
+  // check_2: CHECK ("updatedAt" >= "createdAt")
+  // SQL migration: one current subscription per workspace for TRIALING/ACTIVE/PAST_DUE/UNPAID.
+}
+
+enum FutureWorkspaceSubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
