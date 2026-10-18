@@ -1,0 +1,34 @@
+// ERD: Workspace. SQL-only constraints below require a reviewed migration.
+
+model Workspace {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                 String           @unique @db.VarChar(80)
+  name                 String           @db.VarChar(160)
+  description          String?          @db.Text
+  status               workspace_status @default(ACTIVE)
+  logoUrl              String?          @db.Text
+  supportEmail         String?          @db.VarChar(255)
+  defaultLanguage      String           @default("en") @db.VarChar(12)
+  timezone             String           @default("UTC") @db.VarChar(64)
+  publicFormEnabled    Boolean          @default(false)
+  supportFormTokenHash String?          @db.VarChar(255)
+  createdByUserId      String?          @db.Uuid
+  settings             Json             @default("{}") @db.JsonB
+  metadata             Json             @default("{}") @db.JsonB
+  createdAt            DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime         @default(now()) @db.Timestamptz(6)
+  websiteUrl           String?          @db.VarChar(2048)
+  industry             String?          @db.VarChar(80)
+
+  creator     Profile?     @relation("WorkspaceCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  memberships Membership[]
+  invites     Invite[]
+  // SQL CHECK constraints: prisma/sql/profile-workspace-constraints.sql
+
+  @@index([status, createdAt], map: "idx_workspace_status")
+}
+
+enum workspace_status {
+  ACTIVE
+  SUSPENDED
+}

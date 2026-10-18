@@ -1,0 +1,20 @@
+// Profile identity comes from the authentication owner; no password or generated ID.
+
+model Profile {
+  id                String    @id @db.Uuid
+  email             String    @unique @db.VarChar(255)
+  displayName       String?   @db.VarChar(160)
+  avatarUrl         String?   @db.Text
+  preferredLanguage String    @default("en") @db.VarChar(12)
+  timezone          String    @default("UTC") @db.VarChar(64)
+  lastSeenAt        DateTime? @db.Timestamptz(6)
+  metadata          Json      @default("{}") @db.JsonB
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @db.Timestamptz(6)
+
+  createdWorkspaces Workspace[]  @relation("WorkspaceCreator")
+  memberships       Membership[]
+  acceptedInvites   Invite[]     @relation("InviteAcceptor")
+
+  // SQL CHECK constraints: prisma/sql/profile-workspace-constraints.sql
+}
