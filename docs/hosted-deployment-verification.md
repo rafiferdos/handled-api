@@ -1,113 +1,138 @@
 # Free hosted deployment verification
 
-Verified **18 October 2026 (Asia/Dhaka)**. This records the approved Free preview;
-full hosted AI/business acceptance is still pending.
+Verified **18 October 2026 (Asia/Dhaka)** through the hosted UI, API, database,
+queue worker and real Gemini provider. Customers/data are synthetic; external
+business effects remain simulated.
 
-## Live resources
+## Serving code and resources
 
-- Workspace: `My Workspace`, `tea-db390a7lot8c73f11180`.
-- API: `https://handled-api-zv4h.onrender.com/api/v1`.
-- Existing web service: `srv-db8gpj0m7kps73fq20ag`, Singapore, **Free**.
-- API and BullMQ worker run as separate supervised Node processes in that service.
-- Redis-compatible Key Value: `red-db9t72vbtjjs73cvr4o0`, `handled-redis`, Singapore,
-  **Free**, `noeviction`, persistence `off`, external IP allowlist empty.
-- Supabase project: existing `ljtcdfyajgwqbbuntwoc`; no new managed database.
-- [PR #7](https://github.com/rafiferdos/handled-api/pull/7) merged into `testing`.
-  Application source: `8f0043396282fbaac024d05990b00c45060566a8`.
-- Initial deploy `dep-db9tbh4s728c73cvakbg` reached `live` on that exact commit.
-- Direct-Node runtime deploy `dep-db9tdt2jnfac73dirdeg` reached `live` on the same
-  application commit.
-- [PR #9](https://github.com/rafiferdos/handled-api/pull/9) merged the Gemini
-  latency fix. Current deploy `dep-db9tnebncjis73akkib0` reached `live` at
-  `2026-10-17T20:35:50Z`, with exact application source
-  `9334b61ac54ca866b2eef5d683c6f9e0c6ac7240`. Public checks after it became live
-  returned 200/200/401 for health/readiness/anonymous private access.
+| Component          | Verified deployment                                                                                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend           | [Handled](https://handled-rafiferdos.vercel.app), Vercel Hobby; `dpl_Bb3oWjXPFAhELjH16DEEwuVK9iHU`, commit `83655c168e020f74202472bd88cad3a5b5d10992`, production READY |
+| Backend            | `https://handled-api-zv4h.onrender.com/api/v1`, Render Free/Singapore, service `srv-db8gpj0m7kps73fq20ag`                                                               |
+| Backend deployment | `dep-dba9f5eq1p3s73ar399g`, live; `testing` commit `51943d71a1a9adf41ef23042479eaaeb280b0736`                                                                           |
+| Queue              | Free Key Value `red-db9t72vbtjjs73cvr4o0`; noeviction, persistence off, external IP allowlist empty                                                                     |
+| Database/Auth      | Existing Supabase project `ljtcdfyajgwqbbuntwoc`                                                                                                                        |
+| AI                 | Real `gemini-3.5-flash-lite`, prompt `handled-core-v2`, LOW thinking; `gemini-embedding-2`, 768 dimensions                                                              |
 
-No paid resource, compute upgrade, workspace subscription, or provider billing
-plan was activated. Account-wide build/bandwidth billing controls are not exposed
-through the available tools; this is verification of Free resource plans.
+The API and BullMQ worker remain separate supervised Node processes in one Free
+web service. No paid plan, compute upgrade, extra managed database or provider
+billing was activated. Backend PRs [11](https://github.com/rafiferdos/handled-api/pull/11),
+[12](https://github.com/rafiferdos/handled-api/pull/12) and
+[13](https://github.com/rafiferdos/handled-api/pull/13) merged into `testing`.
+Backend `development` and its pending PRs were left unchanged.
 
-## Public HTTP and runtime
+## Browser: public request through saved outcome
 
-| Request                            | Verified result                    |
-| ---------------------------------- | ---------------------------------- |
-| `GET /health`                      | 200, `status: ok`                  |
-| `GET /ready`                       | 200, database connected            |
-| Anonymous `GET /api/v1/workspaces` | 401, `UNAUTHENTICATED`             |
-| Hosted-origin `OPTIONS /api/v1/me` | 204, exact frontend origin allowed |
+The actual [support form](https://handled-rafiferdos.vercel.app/support/acme-cloud-301fad4d)
+was submitted without login. Receipt **TKT-1004**, ticket
+`b9e0ca12-6497-43a1-a666-2e1bd4926878`, belongs to AcmeCloud Browser Lab
+(`301fad4d-0a09-4220-9a53-03b98679f34f`). Browser login and explicit customer
+verification linked the request to synthetic Maya Rahman / CUS-1001.
 
-Runtime secrets were merged and read back without printing their values.
-`DATABASE_URL` uses the dedicated runtime login, verified TLS, and the committed
-public CA. Redis uses its live internal URL, not local Redis. Public intake is
-intentionally disabled (`PUBLIC_INTAKE_ORIGINS` empty). Actions remain simulated.
+Three published policies reached index READY through the hosted worker and real
+embedding provider. The final browser investigation recorded real classification,
+customer/payment/subscription tools, RAG and cited recommendation/reply generation.
+It cited the verified customer, published refund policy and both settled payments,
+recommending `PAY-9002` for 2900 USD minor units. AI content was not edited to pass.
 
-The first runtime used about 468 MiB of its 512 MiB limit at idle.
-The service was changed to start `node dist/preview.js` directly, removing the
-extra pnpm runtime process. The replacement instance sampled about 419 MiB after
-startup. This is the same tested preview entrypoint; these samples are not a
-load/capacity benchmark.
+Human approval was submitted through the UI. Action
+`54b02b30-aa0f-4be4-9d6d-33677b06b34a` reached **SUCCEEDED**, simulation true,
+one attempt. Saved state changed SETTLED to REFUNDED, version 1 to 2; a fresh
+account-context request confirmed the payment mutation. Browser reload restored
+the correct workspace and refetched the RESOLVED ticket, approved proposal,
+saved result and `action.completed` audit. Timeline retains the prior rejection
+and both investigations.
 
-## Database access
+## Three independent hosted API cases
 
-All five reviewed migrations applied successfully; `prisma migrate status`
-reported up to date. Verified 22 business tables, vector in `extensions`, and the
-private identity function. A private pre-migration schema-only snapshot exists
-locally; the handled business schema was empty before migration.
+The checked-in `pnpm acceptance:hosted` probe completed all three cases in
+AcmeCloud API Lab (`58845327-5fa7-441e-ac0a-3415d3c0841a`) using real HTTP,
+Auth, hosted workers, Gemini/RAG and database refetches.
 
-The user explicitly approved server role `handled_render_preview` with LOGIN,
-BYPASSRLS and restricted handled-table DML/private-function execution. Its actual
-login read business rows and invoked the identity function. Verification found:
+| Case                    | Ticket                                 | Investigation                          | Action                                 | Persisted effect                              |
+| ----------------------- | -------------------------------------- | -------------------------------------- | -------------------------------------- | --------------------------------------------- |
+| Duplicate refund        | `488e871d-c2a2-46d6-b456-076cd72b8945` | `df942895-d689-489d-b2e4-19c5925f83b1` | `50db7cf2-be85-4017-a76f-93b3e49008bb` | Payment REFUNDED                              |
+| Period-end cancellation | `9b2e6c15-6938-4627-a5b3-cd3d2675c047` | `a4450711-0978-4152-adbb-dc22721b9f55` | `67c6329a-c3de-4e0d-a46e-cb997b515ee3` | cancelAtPeriodEnd true; paid period unchanged |
+| Access restoration      | `d01f98e4-038e-4c21-ad97-c657027c6067` | `0d9c02f2-715b-4d28-80cd-87e23d2af2f2` | `1cd0c181-5c34-4533-815b-4686e5522c72` | Product access ACTIVE                         |
 
-- No direct SELECT/UPDATE on `auth.users` or `auth.sessions`.
-- No postgres membership, superuser, CREATE ROLE, CREATE DATABASE or replication.
-- No browser-role handled-table grants or identity-function execution.
-- No migration-owner connection uploaded to the cloud runtime.
+Every action succeeded at attempt 1 with simulation true. Every ticket refetched
+as RESOLVED with one action and a persisted completion audit. Each case verified:
 
-## Real hosted queue evidence
+- Same public request/key replay returns the same ticket; changed payload returns 409. Investigation before explicit customer verification returns 422.
+- Stale approval returns 409; repeated approval with the original key returns the
+  same action ID, including after execution.
+- Retrying a successful action returns 409. Foreign-tenant reads return 403/404;
+  looking up an action under the foreign workspace returns 404.
+- A fresh account-context read confirms the saved simulated business effect.
 
-A labelled suspended workspace, `b33f329f-81cf-47e9-a09b-5827c63452e1`, is reserved for no-op
-infrastructure smoke tests. These records contain no Auth users or customer data.
-The target knowledge revision deliberately does not exist, so the real handler
-returns without a model call or business effect. This is queue infrastructure
-proof, not knowledge indexing or AI workflow proof.
+## Session and public intake
 
-| Outbox record                          | Outcome                                                                              | Attempts |
-| -------------------------------------- | ------------------------------------------------------------------------------------ | -------- |
-| `c394922d-17fb-4d2f-97fd-ed27e69e1f38` | Real outbox → hosted Redis/BullMQ → worker → persisted `PUBLISHED`                   | 1        |
-| `f14445ed-21e3-4923-943a-d5c6bc23aed9` | Seeded missing delivery with expired DB lease → hosted worker reclaims → `PUBLISHED` | 2        |
+Deployed frontend checks passed password login, two HttpOnly/Secure/SameSite=Lax
+cookies, one refresh after invalid access, account switch exposing only the new
+account's workspaces, cross-tenant gateway denial, and logout renewing/revoking
+the session and clearing cookies. Session/private gateway reads then return 401.
+Anonymous private and cross-origin session/intake requests are denied;
+responses use private/no-store. The viewer can read a proposal but cannot approve;
+a foreign user cannot read the browser action.
 
-Both completions cleared the execution token and lease. The second test seeds a
-missing delivery; it does not prove a real Redis restart, in-flight AI recovery,
-or absence of duplicate business effects.
+Public intake is **enabled only for the exact origin**
+`https://handled-rafiferdos.vercel.app`. Form tokens and the proxy HMAC secret are
+server-only. Vercel's authoritative client IP is signed with origin, slug and
+timestamp; Express does not globally trust forwarded headers. Real negative
+requests all returned 403 for lookalike origin, missing token, missing/forged/stale
+attestation and spoofed forwarded IP. Receipts grant no private read or identity.
 
-After the replacement deployment and full old-instance drain/shutdown window,
-new job `ec666d98-6f35-4f2c-afe2-f7b988d9b9b0` reached `PUBLISHED` at attempt 1,
-with no remaining token/lease. Health/readiness remained 200 and anonymous private
-access remained 401. Recent runtime logs had no matching worker-start,
-queue-connection, outbox-dispatch, or supervisor-failure errors.
+Synthetic form tokens expire **25 October 2026, 02:35 UTC**. Before expiry, an
+administrator must issue replacements and update the server-only Vercel mapping
+together. Never put tokens in public URLs or code.
 
-## Source checks and remaining gates
+## Failures found and fixed
 
-- Final `pnpm check`: formatting, type-aware lint, strict types, **144 unit/process
-  tests**, **37 HTTP tests**, and production build passed on Node 22.23.3 /
-  pnpm 11.25.0. One pre-existing unused-import lint warning remains.
-- Five real child-process regressions cover failure, peer cleanup, signals,
-  repeated signals, and a stuck child. An independent actual-entrypoint probe
-  force-cleaned at 25 seconds with no surviving child PIDs.
-- Authenticated Render Blueprint validation: `valid: true`, two resource actions.
-- Independent source/configuration review: no remaining findings.
-- Gemini follow-up: default-thinking direct generation timed out at 45 seconds;
-  LOW returned HTTP 200 in 2.8 seconds. After explicitly selecting LOW for
-  Gemini 3, the standard built provider probe passed real classification, two
-  validated read-tool calls, and a 768-dimension embedding. These calls ran from
-  the local verification environment against the real Free provider, not from
-  the hosted worker. Cloud provider settings and the private key match the
-  successful probe, verified without printing secrets. Follow-up `pnpm check`:
-  147 unit/process + 37 HTTP tests pass. The fix is deployed as recorded above;
-  this is not proof of hosted end-to-end AI/business processing.
-- Real hosted policy indexing, investigation/citations, human approval, simulated
-  effect/audit, duplicate effects, and frontend acceptance remain unverified.
-- A 15-minute idle/wake exercise and a real Redis-data-loss exercise remain
-  unperformed. Documented Free behavior sleeps both processes; Redis is volatile.
+An initial real provider output invented an unsupported refund discriminator.
+Outgoing Gemini JSON schema now converts const to a singleton enum; strict
+application validation still rejects unsupported actions. That failed run was
+preserved. A deliberate retry created a new run; duplicate retry returned the same
+active run ID.
 
-See [the rollout guide](render-deployment.md) for limits and operational details.
+Another recommendation omitted mandatory customer evidence and used an internal
+payment UUID as a refund target. Approval correctly returned 422 with no action;
+the proposal was explicitly rejected. Investigations now always observe the
+verified customer through the authorized tool, downgrade uncited customer facts,
+and specify each action's exact external/UUID target contract. Existing approval
+and execution checks remain enforced. Fresh browser/API runs passed after deploy.
+
+Frontend fixes persist tenant selection per account/tab, clear private queries on
+workspace/account changes, show approval errors inside the dialog and allow a
+fresh investigation after rejection. Existing UI and architecture are preserved.
+
+## Source verification and limits
+
+Node 22.23.3 / pnpm 11.25.0 checks passed backend formatting, types, lint, **165
+unit/process + 37 HTTP tests**, build and **93 disposable local Postgres/Redis
+integration tests**. One pre-existing unused-import warning remains. Frontend
+monorepo check passed lint, types, **39 web + 111 embedded API tests** and both
+builds. Independent review found no actionable issue in the schema, grounding,
+workspace-selection or rejection-recovery fixes. These are separate evidence
+from hosted business execution.
+
+All five reviewed migrations, 22 business tables, vector and restricted runtime
+identity function were previously verified. Runtime has no direct managed-Auth
+table access or postgres membership; browser roles have no business-table grants.
+Earlier no-op outbox jobs proved initial delivery and recovery of a deliberately
+expired lease; they do not prove real Redis data loss.
+
+Remaining limits:
+
+- Render Free sleeps both processes after 15 idle minutes. Controlled idle/wake
+  and in-flight restart tests are unperformed; no continuous worker guarantee.
+- Free Redis is volatile. Actual data-loss recovery and duplicate-effect safety
+  across that event have not been demonstrated.
+- Free Gemini quota is finite. The original 3.8 model hit its daily Free quota;
+  final runs used available 3.5 Flash-Lite Free quota, with no paid fallback.
+- No real refund, subscription-provider change, product-system write or outbound
+  reply delivery was tested. Signup/password recovery are administrator managed.
+- Connected tools do not expose account-wide billing controls. Resource plans
+  stayed Free/Hobby; this is not an account-wide zero-charge guarantee.
+
+See [the rollout guide](render-deployment.md) for operation and secret handling.

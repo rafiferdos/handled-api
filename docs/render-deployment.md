@@ -102,10 +102,16 @@ Merge runtime `DATABASE_URL`, `SUPABASE_URL`, `GEMINI_API_KEY`, exact hosted
 `REDIS_URL` into the existing API environment. Preserve unrelated environment
 keys. Keep verified TLS and the committed CA path. Do not print or commit secrets.
 
-`PUBLIC_INTAKE_ORIGINS` stays empty pending review of the hosted form and reverse
-proxy/client-IP policy. Public intake is therefore disabled. The existing
-frontend origin can be allowed for authenticated browser calls without claiming
-that frontend integration is complete. `ACTION_SIMULATION=true` is mandatory.
+Public intake is enabled with `PUBLIC_INTAKE_ORIGINS` set to exactly
+`https://handled-rafiferdos.vercel.app`. The frontend server holds the workspace
+form tokens and shared `SUPPORT_PROXY_SECRET`, signs Vercel's authoritative
+client IP with timestamp/origin/slug, and sends the attestation to the API.
+Do not enable global Express trust proxy or accept arbitrary forwarded headers.
+Missing/forged/stale attestations, missing form tokens and lookalike origins
+returned 403 in hosted checks. Keep preview aliases out of the allowlist unless
+explicitly configured. `ACTION_SIMULATION=true` is mandatory. Current synthetic
+form tokens expire 25 October 2026, 02:35 UTC; renew and update the server-only
+frontend mapping together before expiry.
 
 ## Deploy and verify
 
@@ -136,11 +142,11 @@ repeated signals at the actual entrypoint, and forced shutdown. The final
 and production build. Independent review verified forced cleanup at 25 seconds
 with no surviving child PIDs and has no remaining findings.
 
-The Gemini timeout follow-up now passes the real configured provider probe with
-explicit LOW thinking for Gemini 3 generation: classification, two validated
-read-tool calls, and 768-dimension embedding. The probe ran locally against the
-real Free provider. Hosted generation, published policy indexing, investigation, human approval, simulated
-business effects, duplicate-effect prevention after hosted restart, and frontend
-acceptance remain separate gates until demonstrated. A live API or queue
-connection alone does not establish these outcomes. No paid provider plan is
-authorized by this deployment.
+The later hosted verification passed published policy indexing, real Gemini/RAG,
+browser approval/refund/audit/reload, and all three API business cases with saved
+effects and idempotency/tenant denials. See the exact
+[acceptance evidence](hosted-deployment-verification.md). Runtime uses
+`gemini-3.5-flash-lite`, LOW thinking, `handled-core-v2` and 768-dimension
+`gemini-embedding-2`. The earlier 3.8 model exhausted its daily Free quota; no paid
+fallback was enabled. Controlled idle/wake, in-flight restart and actual Redis
+data-loss recovery still require proof. No paid provider plan is authorized.
