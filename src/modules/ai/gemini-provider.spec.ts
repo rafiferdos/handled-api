@@ -62,6 +62,65 @@ it('rejects malformed classification and unsafe unsupported tool calls', async (
     ),
   ).rejects.toMatchObject({ code: 'AI_PROVIDER_ERROR' });
 });
+
+const refundProposal = {
+  category: 'BILLING_DUPLICATE_CHARGE',
+  summary:
+    'Two settled charges match the same subscription and billing period.',
+  confidence: 'HIGH',
+  missingFacts: [],
+  recommendation: {
+    type: 'REFUND_DUPLICATE_PAYMENT',
+    targetRef: 'PAY-9002',
+    params: { amountMinor: 2900, currency: 'USD' },
+  },
+  replyDraft: 'One duplicate charge is proposed for human review.',
+  evidenceRefs: ['payment-record', 'kb-policy'],
+};
+
+it('constrains recommendation literals with provider-supported singleton enums', async () => {
+  const transport = client('{}');
+  transport.generateContent = async (input) => {
+    // Gemini ignores unsupported const keywords, leaving the discriminator open.
+    const wire = JSON.stringify(input.config?.responseJsonSchema);
+    const constrained = [
+      'REFUND_DUPLICATE_PAYMENT',
+      'CANCEL_AT_PERIOD_END',
+      'RESTORE_PRODUCT_ACCESS',
+    ].every((type) => wire.includes(`"enum":["${type}"]`));
+    return client(
+      JSON.stringify({
+        ...refundProposal,
+        recommendation: {
+          ...refundProposal.recommendation,
+          type: constrained ? 'REFUND_DUPLICATE_PAYMENT' : 'REFUND_PAYMENT',
+        },
+      }),
+    ).generateContent(input);
+  };
+  await expect(
+    new GeminiProvider(config(), transport).recommend(
+      {},
+      new AbortController().signal,
+    ),
+  ).resolves.toMatchObject({ value: refundProposal });
+});
+
+it('still rejects invented actions instead of rewriting the model response', async () => {
+  const invented = {
+    ...refundProposal,
+    recommendation: {
+      ...refundProposal.recommendation,
+      type: 'REFUND_PAYMENT',
+    },
+  };
+  await expect(
+    new GeminiProvider(config(), client(JSON.stringify(invented))).recommend(
+      {},
+      new AbortController().signal,
+    ),
+  ).rejects.toMatchObject({ code: 'AI_PROVIDER_ERROR' });
+});
 it.each([
   Array(767).fill(1),
   Array(768).fill(0),
