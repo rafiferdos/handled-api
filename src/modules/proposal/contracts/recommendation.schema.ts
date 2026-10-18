@@ -25,17 +25,23 @@ export const recommendationSchema = z
   .discriminatedUnion('type', [
     z.strictObject({
       type: z.literal(ActionType.REFUND_DUPLICATE_PAYMENT),
-      targetRef: referenceSchema,
+      targetRef: referenceSchema.describe(
+        'Exact externalRef of the observed SETTLED payment, such as PAY-9002. Never its internal UUID or evidence sourceRefId.',
+      ),
       params: refundParamsSchema,
     }),
     z.strictObject({
       type: z.literal(ActionType.CANCEL_AT_PERIOD_END),
-      targetRef: referenceSchema,
+      targetRef: referenceSchema.describe(
+        'Exact externalRef of the observed ACTIVE subscription, such as SUB-1002. Never its internal UUID or evidence sourceRefId.',
+      ),
       params: emptyActionParamsSchema,
     }),
     z.strictObject({
       type: z.literal(ActionType.RESTORE_PRODUCT_ACCESS),
-      targetRef: referenceSchema,
+      targetRef: referenceSchema.describe(
+        'Exact internal id (UUID) of the observed revoked product-access record. Never a customer id, product code or evidence sourceRefId.',
+      ),
       params: emptyActionParamsSchema,
     }),
   ])
