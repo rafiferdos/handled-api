@@ -72,6 +72,7 @@ export const environmentSchema = Joi.object({
   // Only simulated business actions are approved for the assignment MVP.
   ACTION_SIMULATION: Joi.boolean().valid(true).default(true),
   SUPPORT_FORM_TOKEN_PEPPER: Joi.string().min(32).allow('').optional(),
+  SUPPORT_PROXY_SECRET: Joi.string().min(32).allow('').optional(),
   PUBLIC_INTAKE_ORIGINS: corsOrigins.allow('').default(''),
 });
 
