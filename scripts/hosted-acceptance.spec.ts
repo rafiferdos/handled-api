@@ -66,13 +66,16 @@ it('requires policy and account citations plus the requested real recommendation
 });
 
 it.each([
-  [false, 1, false],
-  [true, 1, false],
-  [false, 2, false],
-  [true, 1, true],
+  [false, 1, false, 403],
+  [true, 1, false, 403],
+  [false, 2, false, 403],
+  [true, 1, true, 403],
+  [false, 1, false, 404],
+  [false, 1, false, 200],
+  [false, 1, false, 500],
 ] as const)(
-  'recovers completed server workflow after response loss (saved run: %s, server runs: %s)',
-  async (savedRun, runCount, wrongType) => {
+  'recovers completed server workflow after response loss (saved run: %s, server runs: %s, wrong type: %s, tenant denial: %s)',
+  async (savedRun, runCount, wrongType, tenantDenial) => {
     const { randomUUID } = await import('node:crypto');
     const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
     const { tmpdir } = await import('node:os');
@@ -133,7 +136,7 @@ it.each([
         if (path === `/workspaces/${workspaceId}`)
           return response({ slug: 'acme-cloud-synthetic' });
         if (path === `/workspaces/${workspaceId}/tickets`)
-          return response({}, 403);
+          return response({}, tenantDenial);
         if (path.endsWith('/knowledge/documents'))
           return response(
             entries.map((e) => ({ id: e.targetId, status: 'PUBLISHED' })),
@@ -256,7 +259,9 @@ it.each([
         HANDLED_FORM_TOKEN: 'a'.repeat(43),
         HANDLED_ACCEPTANCE_STATE_FILE: stateFile,
       });
-      if (runCount === 2)
+      if (![403, 404].includes(tenantDenial))
+        await expect(operation).rejects.toThrow('expected 403 or 404');
+      else if (runCount === 2)
         await expect(operation).rejects.toThrow(
           'Ambiguous existing investigations',
         );
