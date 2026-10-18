@@ -18,6 +18,7 @@ import {
 import { ReadTools } from '../ai/read-tools.js';
 import { validateProposalEvidence } from '../ai/evidence-policy.js';
 import type { EvidenceSource } from '../proposal/contracts/evidence.schema.js';
+import type { ReadToolCall } from '../ai/contracts/read-tool.contracts.js';
 import { verifySources } from '../proposal/source-verifier.js';
 import { InvestigationRepository } from './investigation.repository.js';
 import { ProposalRepository } from '../proposal/proposal.repository.js';
@@ -146,6 +147,32 @@ export class InvestigationProcessor implements OnModuleInit {
       const sources = new Map<string, EvidenceSource>();
       const missing: string[] = [...classification.missingFacts];
       let calls = 0;
+      const observe = async (call: ReadToolCall) => {
+        const start = Date.now();
+        calls++;
+        const result = await this.tools.execute(context, call);
+        observations.push({
+          name: call.name,
+          data: result.data,
+          missingFacts: result.missingFacts,
+        });
+        missing.push(...result.missingFacts);
+        for (const source of result.sources)
+          sources.set(source.sourceRefId, source);
+        await this.step(
+          job,
+          call.name === 'searchKnowledge' ? 'RAG' : 'TOOL',
+          call.name,
+          result.sources.map((s) => s.sourceRefId),
+          Date.now() - start,
+          call.name,
+        );
+      };
+      // Every executable action requires a recorded verified customer source.
+      await observe({
+        name: 'getCustomerProfile',
+        arguments: { customerId: context.customerId },
+      });
       for (let round = 0; round < 3; round++) {
         signal.throwIfAborted();
         await this.tools.authorize(context);
@@ -163,27 +190,7 @@ export class InvestigationProcessor implements OnModuleInit {
         if (!planned.length) break;
         if (planned.length > 4 || calls + planned.length > 10)
           throw new AppException('AI_PROVIDER_ERROR');
-        for (const call of planned) {
-          const start = Date.now();
-          calls++;
-          const result = await this.tools.execute(context, call);
-          observations.push({
-            name: call.name,
-            data: result.data,
-            missingFacts: result.missingFacts,
-          });
-          missing.push(...result.missingFacts);
-          for (const source of result.sources)
-            sources.set(source.sourceRefId, source);
-          await this.step(
-            job,
-            call.name === 'searchKnowledge' ? 'RAG' : 'TOOL',
-            call.name,
-            result.sources.map((s) => s.sourceRefId),
-            Date.now() - start,
-            call.name,
-          );
-        }
+        for (const call of planned) await observe(call);
       }
       if (!sources.size)
         missing.push('No verified account or policy observations');

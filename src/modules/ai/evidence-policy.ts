@@ -17,6 +17,13 @@ export function validateProposalEvidence(
     critical.push('No eligible published policy evidence');
   if (output.recommendation && !used.some((s) => s.sourceType === 'TOOL'))
     critical.push('Missing verified account evidence');
+  if (
+    output.recommendation &&
+    !used.some(
+      (s) => s.sourceType === 'TOOL' && s.sourceRefId.startsWith('customer-'),
+    )
+  )
+    critical.push('Missing verified customer identity evidence');
   const missingFacts = [
     ...new Set([...output.missingFacts, ...critical]),
   ].slice(0, 20);

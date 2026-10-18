@@ -110,6 +110,13 @@ it('coalesces concurrent admission and records a safe manual-review proposal onc
   await deliver(f.actor.workspaceId);
   expect(await runs.read(f.actor, first.investigationId)).toMatchObject({
     status: 'NEEDS_REVIEW',
+    steps: expect.arrayContaining([
+      expect.objectContaining({
+        type: 'TOOL',
+        toolName: 'getCustomerProfile',
+        sourceRefs: [`customer-${f.ticket.customerId}`],
+      }),
+    ]),
   });
   expect(
     (

@@ -85,7 +85,7 @@ export class GeminiProvider extends AiProvider {
   }
   recommend(input: unknown, signal: AbortSignal) {
     return this.structured(
-      'Recommend a resolution from actual scoped observations. Use only provided exact sourceRefId values. replyDraft must be an honest preliminary draft. Critical missing facts or absent policy require LOW and null recommendation.',
+      'Recommend a resolution from actual scoped observations. Use only provided exact sourceRefId values. Every action must cite the verified customer record plus its policy and all required eligibility records. Refund and cancellation targetRef values are the observed payment/subscription externalRef, never their internal UUID or sourceRefId; access restoration uses the observed product-access UUID id. replyDraft must clearly remain pending human approval and execution. Critical missing facts or absent policy require LOW and null recommendation.',
       proposalOutputSchema,
       input,
       signal,

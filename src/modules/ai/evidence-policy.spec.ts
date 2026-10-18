@@ -1,5 +1,6 @@
 import { validateProposalEvidence } from './evidence-policy.js';
 import { proposalOutputSchema } from './contracts/proposal-output.schema.js';
+import type { EvidenceSource } from '../proposal/contracts/evidence.schema.js';
 const output = proposalOutputSchema.parse({
   category: 'BILLING_DUPLICATE_CHARGE',
   summary: 'A duplicate payment exists',
@@ -32,4 +33,55 @@ it('downgrades missing critical policy or tool facts to LOW without a recommenda
   );
   expect(safe).toMatchObject({ confidence: 'LOW', recommendation: null });
   expect(safe.missingFacts).toContain('No published refund policy');
+});
+
+it('requires the verified customer citation even when policy and payment citations exist', () => {
+  const payment: EvidenceSource = {
+    sourceType: 'TOOL',
+    sourceRefId: 'payment-record',
+    title: 'Payment',
+    excerpt: 'Verified settled payment',
+    contentHash: 'a'.repeat(64),
+    observedAt: new Date().toISOString(),
+  };
+  const customer: EvidenceSource = {
+    ...payment,
+    sourceRefId: 'customer-verified-id',
+    title: 'Customer',
+  };
+  const policy: EvidenceSource = {
+    ...payment,
+    sourceType: 'KNOWLEDGE',
+    sourceRefId: 'kb-policy',
+    documentId: '00112233-4455-4677-8899-aabbccddeeff',
+    documentVersion: 1,
+    chunkId: '10112233-4455-4677-8899-aabbccddeeff',
+    score: 0.9,
+  };
+  const candidate = {
+    ...output,
+    evidenceRefs: ['payment-record', 'kb-policy'],
+  };
+  const uncited = validateProposalEvidence(
+    candidate,
+    [payment, customer, policy],
+    [],
+  );
+  expect(uncited).toMatchObject({ confidence: 'LOW', recommendation: null });
+  expect(uncited.missingFacts).toContain(
+    'Missing verified customer identity evidence',
+  );
+  expect(
+    validateProposalEvidence(
+      {
+        ...candidate,
+        evidenceRefs: [...candidate.evidenceRefs, customer.sourceRefId],
+      },
+      [payment, customer, policy],
+      [],
+    ),
+  ).toMatchObject({
+    confidence: 'HIGH',
+    recommendation: output.recommendation,
+  });
 });
