@@ -4,7 +4,7 @@ Verified **18 October 2026 (Asia/Dhaka)** through the hosted UI, API, database,
 queue worker and real Gemini provider. Customers/data are synthetic; external
 business effects remain simulated.
 
-## Serving code and resources
+## Original acceptance code and resources
 
 | Component          | Verified deployment                                                                                                                                                     |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -136,3 +136,36 @@ Remaining limits:
   stayed Free/Hobby; this is not an account-wide zero-charge guarantee.
 
 See [the rollout guide](render-deployment.md) for operation and secret handling.
+
+## No-action follow-up after reused fixture failures
+
+Later manual testing reused API Lab's already-refunded payment and already-active
+access. Real provider reproduction returned a valid null recommendation with
+HIGH confidence that no work remained. The strict domain schema requires null
+recommendations to have LOW confidence, so this semantic mismatch appeared as
+AI_PROVIDER_ERROR. It was not a failed login, sleeping host or provider outage in
+these reproductions.
+
+[PR #15](https://github.com/rafiferdos/handled-api/pull/15) keeps structural,
+action, parameter, citation and domain checks, conservatively downgrading null
+recommendations to LOW/manual review. It never promotes or invents an action.
+Regression tests failed before the fix and passed afterward; full check passed
+171 unit/process + 37 HTTP tests and build. Independent review found no issues.
+
+Render deployment `dep-dbaaa2ijnfac73ev8c50` went live at
+`2026-10-18T10:54:55Z` on application commit
+`984ac512cf8fccca1fce5514cd68cff1d86cd56f`; generation remains Free
+gemini-3.5-flash-lite with prompt handled-core-v3 and ACTION_SIMULATION=true.
+After the old worker drain window, actual hosted REST checks confirmed:
+
+| Reused case              | New investigation                      | Result                                                                           |
+| ------------------------ | -------------------------------------- | -------------------------------------------------------------------------------- |
+| Already-refunded payment | `f991ed8e-c361-40fb-8931-789769d92099` | NEEDS_REVIEW, no failure code, LOW/null, zero actions, unchanged account context |
+| Already-active access    | `7b21b7ef-2ed9-44d7-8450-9f678ad08d8d` | NEEDS_REVIEW, no failure code, LOW/null, zero actions, unchanged account context |
+
+Chrome refetch of TKT-1001 showed Needs review, the explanation that PAY-9002 was
+already refunded, and disabled approval. Prior failures remain in saved history.
+The positive browser/three-case API acceptance above remains pinned to its
+original deployment; this follow-up verifies the no-action cases on the new code.
+Browser Lab's unused cancellation/access fixtures are available for fresh positive
+manual tests. Never reset shared fixtures to disguise already-applied effects.

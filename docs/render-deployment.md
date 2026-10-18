@@ -146,7 +146,11 @@ The later hosted verification passed published policy indexing, real Gemini/RAG,
 browser approval/refund/audit/reload, and all three API business cases with saved
 effects and idempotency/tenant denials. See the exact
 [acceptance evidence](hosted-deployment-verification.md). Runtime uses
-`gemini-3.5-flash-lite`, LOW thinking, `handled-core-v2` and 768-dimension
+`gemini-3.5-flash-lite`, LOW thinking, `handled-core-v3` and 768-dimension
 `gemini-embedding-2`. The earlier 3.8 model exhausted its daily Free quota; no paid
 fallback was enabled. Controlled idle/wake, in-flight restart and actual Redis
 data-loss recovery still require proof. No paid provider plan is authorized.
+
+The v3 no-action follow-up was separately verified against already-applied
+effects: NEEDS_REVIEW, LOW/null, no provider failure, no new action or account
+change. The original positive acceptance remains pinned to its earlier v2 run.
