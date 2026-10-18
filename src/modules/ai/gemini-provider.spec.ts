@@ -121,6 +121,38 @@ it('still rejects invented actions instead of rewriting the model response', asy
     ),
   ).rejects.toMatchObject({ code: 'AI_PROVIDER_ERROR' });
 });
+
+it.each(['HIGH', 'MEDIUM'])(
+  'routes a %s-confidence no-action response to manual review instead of provider failure',
+  async (confidence) => {
+    const output = {
+      ...refundProposal,
+      summary:
+        'The duplicate payment has already been refunded; no further action is needed.',
+      confidence,
+      recommendation: null,
+    };
+    const result = await new GeminiProvider(
+      config(),
+      client(JSON.stringify(output)),
+    ).recommend({}, new AbortController().signal);
+    expect(result.value).toEqual({ ...output, confidence: 'LOW' });
+  },
+);
+
+it.each([
+  { confidence: 'CERTAIN', recommendation: null },
+  { confidence: 'HIGH', recommendation: null, unexpected: 'field' },
+  { confidence: 'HIGH', recommendation: null, evidenceRefs: ['same', 'same'] },
+  { confidence: 'HIGH', recommendation: null, missingFacts: 'invalid' },
+])('still rejects malformed no-action responses', async (invalid) => {
+  await expect(
+    new GeminiProvider(
+      config(),
+      client(JSON.stringify({ ...refundProposal, ...invalid })),
+    ).recommend({}, new AbortController().signal),
+  ).rejects.toMatchObject({ code: 'AI_PROVIDER_ERROR' });
+});
 it.each([
   Array(767).fill(1),
   Array(768).fill(0),

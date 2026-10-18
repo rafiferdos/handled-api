@@ -19,6 +19,7 @@ import { replySchema, validateEmbedding } from './provider.schemas.js';
 import {
   classificationSchema,
   proposalOutputSchema,
+  proposalResponseSchema,
 } from './contracts/proposal-output.schema.js';
 import {
   readToolArgumentSchemas,
@@ -83,13 +84,25 @@ export class GeminiProvider extends AiProvider {
       signal,
     );
   }
-  recommend(input: unknown, signal: AbortSignal) {
-    return this.structured(
-      'Recommend a resolution from actual scoped observations. Use only provided exact sourceRefId values. Every action must cite the verified customer record plus its policy and all required eligibility records. Refund and cancellation targetRef values are the observed payment/subscription externalRef, never their internal UUID or sourceRefId; access restoration uses the observed product-access UUID id. replyDraft must clearly remain pending human approval and execution. Critical missing facts or absent policy require LOW and null recommendation.',
-      proposalOutputSchema,
+  async recommend(input: unknown, signal: AbortSignal) {
+    const result = await this.structured(
+      'Recommend a resolution from actual scoped observations. Use only provided exact sourceRefId values. Every action must cite the verified customer record plus its policy and all required eligibility records. Refund and cancellation targetRef values are the observed payment/subscription externalRef, never their internal UUID or sourceRefId; access restoration uses the observed product-access UUID id. replyDraft must clearly remain pending human approval and execution. Critical missing facts, absent policy, or no eligible action (including an already completed effect) require LOW and null recommendation for manual review.',
+      proposalResponseSchema,
       input,
       signal,
     );
+    try {
+      // Model certainty that no work remains must never imply action eligibility.
+      const value = proposalOutputSchema.parse({
+        ...result.value,
+        ...(result.value.recommendation === null
+          ? { confidence: 'LOW' as const }
+          : {}),
+      });
+      return { ...result, value };
+    } catch {
+      throw new AppException('AI_PROVIDER_ERROR');
+    }
   }
   reply(input: unknown, signal: AbortSignal) {
     return this.structured(

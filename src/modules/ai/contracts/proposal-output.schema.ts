@@ -26,22 +26,21 @@ export const classificationSchema = z
   })
   .readonly();
 
-export const proposalOutputSchema = z
-  .strictObject({
-    category: categorySchema,
-    summary: textSchema(ContractLimit.SUMMARY),
-    confidence: z.enum(Confidence),
-    missingFacts: z
-      .array(textSchema(ContractLimit.FACT))
-      .max(ContractLimit.FACTS)
-      .readonly(),
-    recommendation: recommendationSchema.nullable(),
-    replyDraft: textSchema(ContractLimit.REPLY),
-    evidenceRefs: z
-      .array(referenceSchema)
-      .max(ContractLimit.SOURCES)
-      .readonly(),
-  })
+// Structural provider response; domain invariants still apply before persistence.
+export const proposalResponseSchema = z.strictObject({
+  category: categorySchema,
+  summary: textSchema(ContractLimit.SUMMARY),
+  confidence: z.enum(Confidence),
+  missingFacts: z
+    .array(textSchema(ContractLimit.FACT))
+    .max(ContractLimit.FACTS)
+    .readonly(),
+  recommendation: recommendationSchema.nullable(),
+  replyDraft: textSchema(ContractLimit.REPLY),
+  evidenceRefs: z.array(referenceSchema).max(ContractLimit.SOURCES).readonly(),
+});
+
+export const proposalOutputSchema = proposalResponseSchema
   .superRefine((proposal, context) => {
     if (
       proposal.confidence === Confidence.HIGH &&
