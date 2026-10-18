@@ -19,7 +19,7 @@ AI_PROVIDER=gemini
 AI_MODEL=gemini-3.5-flash-lite
 GEMINI_MODEL=gemini-3.5-flash-lite
 GEMINI_EMBEDDING_MODEL=gemini-embedding-2
-AI_PROMPT_VERSION=handled-core-v2
+AI_PROMPT_VERSION=handled-core-v3
 AI_TIMEOUT_MS=30000
 AI_MAX_RETRIES=2
 EMBEDDING_DIMENSION=768
@@ -92,3 +92,10 @@ observe the verified customer through the authorized tool and require its cited
 evidence before an actionable proposal. Refund/cancellation targets use payment/
 subscription externalRef; access restoration uses the access UUID. Do not relax
 approval validation to accommodate malformed model output.
+
+Prompt v3 also treats already-completed effects as no eligible action. A
+structurally valid null recommendation is conservatively assigned LOW before
+the unchanged domain/evidence validation, even if the model expresses HIGH or
+MEDIUM certainty that no work remains. The run then requires manual review,
+with no executable action. Invalid fields, actions and duplicate citations still
+fail closed. This avoids mislabelling a safe no-action outcome as provider failure.

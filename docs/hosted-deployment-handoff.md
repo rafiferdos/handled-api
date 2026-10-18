@@ -9,8 +9,10 @@ refund, period-end cancellation and access restoration. Duplicate approval,
 stale version, terminal retry and cross-tenant checks passed. See the current
 [verification record](hosted-deployment-verification.md) for exact IDs and limits.
 
-Serving backend: `testing` at `51943d71a1a9adf41ef23042479eaaeb280b0736`, Render
-deploy `dep-dba9f5eq1p3s73ar399g` live. Serving frontend acceptance commit:
+Serving backend after the no-action follow-up: `testing` application commit
+`984ac512cf8fccca1fce5514cd68cff1d86cd56f`, Render deployment
+`dep-dbaaa2ijnfac73ev8c50` live. Original three-case acceptance ran at
+`51943d71a1a9adf41ef23042479eaaeb280b0736`. Frontend acceptance commit:
 `83655c168e020f74202472bd88cad3a5b5d10992`, Vercel production READY. The user
 explicitly authorized publishing fixes and Free deploys; backend `development`
 and PRs targeting it must remain untouched. New backend PRs target `testing`.
@@ -19,15 +21,24 @@ Public intake now allows exactly `https://handled-rafiferdos.vercel.app` and
 requires server-only form tokens plus signed proxy/client-IP attestation.
 Synthetic form tokens expire 25 October 2026 at 02:35 UTC; rotate them together
 with the server-only frontend mapping. Never print tokens or runtime secrets.
-Runtime generation uses `gemini-3.5-flash-lite`, prompt `handled-core-v2`, LOW
+Runtime generation uses `gemini-3.5-flash-lite`, prompt `handled-core-v3`, LOW
 thinking. The earlier 3.8 daily Free quota was exhausted; no paid fallback was
 enabled. `ACTION_SIMULATION=true` remains mandatory.
 
-Latest full checks: backend 165 unit/process + 37 HTTP tests and build; 93 local
-database/queue integration checks. Frontend 39 web + 111 embedded API tests,
+Latest full checks: backend 171 unit/process + 37 HTTP tests and build; the prior
+grounding change also passed 93 local database/queue integration checks.
+Frontend 39 web + 111 embedded API tests,
 lint/types and both builds. Controlled Free idle/wake, in-flight restart and real
 Redis data-loss exercises remain unperformed. External effects/delivery remain
 simulated/unconnected. Keep all hosting Free; do not imply continuous workers.
+
+Already-refunded/already-active API Lab fixtures exposed a provider semantic
+mismatch: a null recommendation with HIGH certainty was rejected as
+AI_PROVIDER_ERROR. PR #15 preserves strict structural/domain validation and
+conservatively routes null recommendations to LOW/manual review. It never
+creates an action from a no-action response. Use Browser Lab's unused
+cancellation/access fixtures for a fresh positive manual test; do not reset data
+or expect an already-applied effect to be eligible again.
 
 ## Historical infrastructure checkpoint before integration
 
