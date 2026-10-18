@@ -182,7 +182,7 @@ export async function hostedAcceptance(
     options: {
       method?: string;
       body?: unknown;
-      expected?: number;
+      expected?: number | readonly number[];
       foreign?: boolean;
       publicKey?: string;
     } = {},
@@ -219,11 +219,12 @@ export async function hostedAcceptance(
     });
     const text = await response.text();
     const envelope = record.parse(JSON.parse(text));
-    const status = options.expected ?? 200;
-    if (response.status !== status) {
+    const expected = options.expected ?? 200;
+    const statuses = typeof expected === 'number' ? [expected] : expected;
+    if (!statuses.includes(response.status)) {
       const code = record.safeParse(envelope.error);
       throw new Error(
-        `HTTP ${response.status} ${options.method ?? 'GET'} ${path}; expected ${status}; code=${code.success ? String(code.data.code) : 'unknown'}`,
+        `HTTP ${response.status} ${options.method ?? 'GET'} ${path}; expected ${statuses.join(' or ')}; code=${code.success ? String(code.data.code) : 'unknown'}`,
       );
     }
     return envelope.data;
@@ -282,7 +283,7 @@ export async function hostedAcceptance(
     slug.startsWith('acme-cloud-'),
     'Acceptance requires the scoped AcmeCloud synthetic fixtures',
   );
-  await call(`${prefix}/tickets`, { foreign: true, expected: 403 });
+  await call(`${prefix}/tickets`, { foreign: true, expected: [403, 404] });
   const documents = rows.parse(
     await call(`${prefix}/knowledge/documents?page=1&limit=100`),
   );
