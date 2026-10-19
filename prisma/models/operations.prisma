@@ -1,4 +1,219 @@
-// Owner slot: Person D. Planned models: ActionExecution, AuditEvent, OutboxEvent.
-// Starter: no business models implemented. Add schema through an owner-reviewed PR.
-// Every tenant model needs workspaceId and same-workspace constraints.
-// Coordinate cross-domain relations and migrations; see docs/ownership.md.
+// Owner slot: Person D. Simulated action execution, immutable audit history and
+// durable outbox dispatch. Every model is tenant-scoped; same-workspace
+// constraints are enforced through composite uniques and the access guard.
+//
+// Cross-domain references (Ticket, Proposal, Customer, Payment, Subscription,
+// ProductAccess) are kept as untyped string IDs on purpose: the canonical plan
+// forbids fictitious direct FKs to other owners' tables. When Person B / Lead
+// publish their models, a coordinated migration can promote these fields to
+// real relations without breaking the wire contract.
+model ActionExecution {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Tenant scope. Every query, worker payload and socket event carries the
+  // same workspaceId verified by the access guard.
+  workspaceId String @db.Uuid
+
+  // Wire-aligned enums. Values must match src/common/contracts/domain.enums.ts.
+  actionType  ActionType
+  status      ActionExecutionStatus @default(QUEUED)
+
+  // Stable, tenant-scoped identifiers used to make admission + effect idempotent.
+  // businessEffectKey is the "do this business mutation exactly once" guard.
+  // idempotencyKey is the client's request-scoped retry token.
+  businessEffectKey String
+  idempotencyKey    String
+
+  // Soft references to other owners' rows. Nullable so partial flows still
+  // record an execution. Same-workspace checks happen in the service layer
+  // because the source tables live in other owners' schema files.
+  ticketId   String? @db.Uuid
+  proposalId String? @db.Uuid
+  customerId String? @db.Uuid
+
+  // Actor identity is the resolved Profile id (Person A). Stored separately
+  // from approverId so admission and approval stay auditable.
+  requestedBy String  @db.Uuid
+  approvedBy  String? @db.Uuid
+
+  // Inputs to the simulated handler. Persisted so retries and investigations
+  // can reconstruct intent without re-reading the live request body.
+  payload Json
+
+  // Result captures are intentionally small: status + a sanitized error code.
+  // Detailed provider/SDK messages must never be persisted.
+  resultCode    String?
+  resultMessage String?
+  attempt       Int      @default(0)
+  // Simulated effect snapshots for ADR-004 / ADR-005 audit trails. Only
+  // updated on a successful state transition so a partial/failed run keeps
+  // the column null and clients can tell the difference from "no change".
+  // The actual business tables (Payment, Subscription, ProductAccess) belong
+  // to Person B; this column stores the projection we *would* have written so
+  // the audit reader can replay the simulated effect without crossing
+  // ownership seams.
+  beforeState Json?
+  afterState  Json?
+
+  // Sanitized short error code captured at the worker boundary. Detailed
+  // error messages stay in the structured log, never on the row.
+  lastErrorCode String?
+
+  // Lifecycle timestamps. startedAt/finishedAt are worker-controlled; the
+  // service layer reconciles OUTCOME_UNKNOWN before any retry.
+  queuedAt   DateTime  @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Composite uniques enforce tenant scoping at the database level.
+  // Admins can never accidentally mix two workspaces' executions.
+  @@unique([workspaceId, businessEffectKey], name: "action_execution_business_effect_unique")
+  @@unique([workspaceId, idempotencyKey], name: "action_execution_idempotency_unique")
+  @@index([workspaceId, status])
+  @@index([workspaceId, actionType, queuedAt])
+  @@index([workspaceId, ticketId])
+  @@index([workspaceId, proposalId])
+}
+
+model AuditEvent {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Tenant scope. Audit reads are always filtered by workspaceId; cross-tenant
+  // access would leak existence of other workspaces' actions.
+  workspaceId String @db.Uuid
+
+  // Subject identity. "subjectType" lets the audit feed join multiple domains
+  // without coupling to a particular owner table; "subjectId" stores the
+  // referenced row id. PII (email, name, address) is never written here.
+  subjectType AuditSubjectType
+  subjectId   String           @db.Uuid
+
+  // High-level action: ACTION_QUEUED, ACTION_SUCCEEDED, ACTION_FAILED,
+  // PROPOSAL_APPROVED, PROPOSAL_REJECTED, etc. Free-form string keeps the
+  // audit table from coupling to every module's enum.
+  action String
+
+  // Optional correlation: the same businessEffectKey or idempotencyKey used by
+  // ActionExecution so the audit feed can be replayed around one business op.
+  businessEffectKey String?
+  idempotencyKey    String?
+
+  // Sanitized metadata. Callers MUST strip credentials, raw tokens and PII
+  // before passing it in; the service layer does an allowlisted JSON pass.
+  metadata Json?
+
+  // Actor. nullable = system action (worker, scheduler). Same-workspace
+  // verification happens in the service before the insert runs.
+  actorId String? @db.Uuid
+  source  AuditSource @default(API)
+
+  createdAt DateTime @default(now())
+
+  // Append-only: there is intentionally no updatedAt. Updates to AuditEvent
+  // are forbidden by the service layer; a corrective entry is a new row.
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, subjectType, subjectId])
+  @@index([workspaceId, action])
+  @@index([workspaceId, businessEffectKey])
+  @@index([workspaceId, actorId, createdAt])
+}
+
+model OutboxEvent {
+  id String @id @default(uuid()) @db.Uuid
+
+  workspaceId String @db.Uuid
+
+  // Stable per-business-effect identifier. Combined with workspaceId, it lets
+  // the dispatcher re-enqueue safely and lets consumers deduplicate.
+  businessEffectKey String
+
+  // Wire event name (SupportEvent values, e.g. "action.queued"). Producer
+  // names live in src/common/contracts/async.contracts.ts.
+  eventName String
+
+  // Thin payload. Only IDs and status fields — clients refetch the full REST
+  // state on reconnect. Credentials, raw provider bodies and PII are forbidden.
+  payload Json
+
+  status OutboxStatus @default(PENDING)
+
+  // Dispatch bookkeeping. The dispatcher claims a row, then either advances
+  // status to SENT, records FAILED + nextAttemptAt, or leaves it PENDING if
+  // the worker crashes.
+  attempts       Int       @default(0)
+  nextAttemptAt  DateTime  @default(now())
+  claimedAt      DateTime?
+  lastErrorCode  String?
+  dispatchedAt   DateTime?
+
+  // Durable outbox recovery (Person D). Distinct from the realtime emitter
+  // path so both can run side-by-side without trampling each other's state.
+  // The new dispatcher (queue/outbox-dispatcher.service.ts) uses a row lease
+  // to claim a row, publishes the payload to a BullMQ queue (action or
+  // evaluation), and only marks the row PUBLISHED once the broker has the
+  // job. A crashed dispatcher leaves the lease to expire and the row is
+  // re-claimed on the next tick.
+  availableAt      DateTime  @default(now())
+  lockedBy         String?
+  lockedUntil      DateTime?
+  publishedAt      DateTime?
+  lastErrorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // businessEffectKey is unique per workspace so duplicate writes from a
+  // retried transaction collapse into one outbox row.
+  @@unique([workspaceId, businessEffectKey], name: "outbox_business_effect_unique")
+  @@index([workspaceId, status, nextAttemptAt])
+  @@index([workspaceId, eventName, createdAt])
+  @@index([status, availableAt])
+  @@index([status, lockedUntil])
+}
+
+enum ActionType {
+  REFUND_DUPLICATE_PAYMENT
+  CANCEL_AT_PERIOD_END
+  RESTORE_PRODUCT_ACCESS
+  SEND_CUSTOMER_REPLY
+}
+
+enum ActionExecutionStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  OUTCOME_UNKNOWN
+}
+
+enum AuditSubjectType {
+  ACTION_EXECUTION
+  PROPOSAL
+  TICKET
+  CUSTOMER
+  BILLING_RECORD
+  WORKSPACE
+}
+
+enum AuditSource {
+  API
+  WORKER
+  SYSTEM
+}
+
+enum OutboxStatus {
+  // The realtime emitter path (queue/outbox.dispatcher.ts).
+  PENDING
+  CLAIMED
+  SENT
+  FAILED
+
+  // The durable outbox recovery path (queue/outbox-dispatcher.service.ts).
+  // PROCESSING = the dispatcher holds a row lease and is publishing to BullMQ.
+  // PUBLISHED  = the broker has accepted the job; the row is durably handed off.
+  PROCESSING
+  PUBLISHED
+}

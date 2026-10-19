@@ -2,3 +2,42 @@
 // Starter: no business models implemented. Add schema through an owner-reviewed PR.
 // Every tenant model needs workspaceId and same-workspace constraints.
 // Coordinate cross-domain relations and migrations; see docs/ownership.md.
+
+// Minimal EvaluationRun stub owned by Person D (queue/processing). The lead
+// owns the full evaluation schema (cases, scoring, results); this is the
+// processing surface the BullMQ evaluation worker writes to. Replace the
+// fields below through a coordinated PR with the lead once the full
+// EvaluationCase / EvaluationResult models land.
+model EvaluationRun {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Tenant scope. Same as the rest of Person D's tables.
+  workspaceId String @db.Uuid
+
+  // Lifecycle status. RUNNING is set by the BullMQ worker before the
+  // evaluation logic runs; COMPLETED/FAILED is the terminal state.
+  status EvaluationRunStatus @default(QUEUED)
+
+  // Provenance + retry bookkeeping. attempt is bumped inside the worker
+  // transaction; lastErrorCode is the sanitized short code captured at the
+  // worker boundary. Detailed error messages stay in the structured log.
+  attempt       Int     @default(0)
+  lastErrorCode String?
+
+  queuedAt   DateTime   @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, queuedAt])
+}
+
+enum EvaluationRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
