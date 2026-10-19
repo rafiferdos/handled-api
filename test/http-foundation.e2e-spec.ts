@@ -55,7 +55,7 @@ class ItemDto {
   id: string;
 }
 
-// These controllers exist only in the test container, never in the shipped API.
+
 @Controller('foundation-fixture')
 class FoundationFixtureController {
   @Public()
