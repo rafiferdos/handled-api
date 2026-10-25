@@ -41,6 +41,7 @@ export const SupportEvent = {
   ACTION_PROGRESS: 'action.progress',
   ACTION_COMPLETED: 'action.completed',
   ACTION_FAILED: 'action.failed',
+  ACTION_EXECUTE: 'action.execute',
   KNOWLEDGE_GAP_DETECTED: 'knowledge.gap.detected',
 } as const;
 

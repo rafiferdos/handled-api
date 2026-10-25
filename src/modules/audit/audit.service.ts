@@ -15,11 +15,9 @@ const AUDITABLE_ACTION_SUBJECT: AuditSubjectType =
   AuditSubjectType.ACTION_EXECUTION;
 const AUDITABLE_TICKET_SUBJECT: AuditSubjectType = AuditSubjectType.TICKET;
 
-
 @Injectable()
 export class AuditService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
-
 
   async recordEvent(
     tx: Prisma.TransactionClient | PrismaService,
@@ -39,7 +37,6 @@ export class AuditService {
       },
     });
   }
-
 
   async listTicketAudits(
     workspaceId: string,

@@ -21,7 +21,6 @@ export class SupportGateway
   @WebSocketServer()
   server!: Namespace;
 
-
   handleConnection(client: Socket): void {
     // Listen for the lightweight `support.ping` smoke-test message and echo
     // back a TICKET_UPDATED envelope. Bypassing @SubscribeMessage keeps the
@@ -67,7 +66,6 @@ export class SupportGateway
     };
     client.emit(SupportEvent.TICKET_UPDATED, envelope);
   }
-
 
   async emitToWorkspace(
     workspaceId: string,

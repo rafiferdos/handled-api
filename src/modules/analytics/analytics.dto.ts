@@ -9,7 +9,6 @@ function toPositiveInt(value: unknown): unknown {
   return value;
 }
 
-
 export class AnalyticsWindowQueryDto {
   @ApiProperty({
     description: 'Number of days to look back from now (1..90).',

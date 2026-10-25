@@ -26,7 +26,6 @@ export class HealthService {
       throw new AppException(ErrorCode.DEPENDENCY_UNAVAILABLE);
     }
 
-   
     let redis: 'connected' | 'unconfigured' | 'disconnected' = 'unconfigured';
     try {
       const result = await this.queueHealth.ready();

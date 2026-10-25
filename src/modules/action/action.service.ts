@@ -30,7 +30,6 @@ export interface QueueApprovedActionResult {
   duplicate: boolean;
 }
 
-
 export interface QueueApprovedActionParams {
   workspaceId: string;
   proposalId: string;
@@ -57,12 +56,10 @@ export class ActionService {
     private readonly actionQueue: Queue,
   ) {}
 
-
   async queueApprovedAction(
     params: QueueApprovedActionParams,
   ): Promise<QueueApprovedActionResult> {
     const businessEffectKey = this.buildBusinessEffectKey(params);
-
 
     const existing = await this.prisma.actionExecution.findUnique({
       where: {
@@ -131,7 +128,6 @@ export class ActionService {
       return created;
     });
 
-
     try {
       await this.actionQueue.add(
         QueueName.ACTION,
@@ -166,7 +162,6 @@ export class ActionService {
     };
   }
 
-
   async getActionsByTicket(
     workspaceId: string,
     ticketId: string,
@@ -190,7 +185,6 @@ export class ActionService {
     }
     return this.toResponse(row);
   }
-
 
   private buildBusinessEffectKey(params: QueueApprovedActionParams): string {
     return [
@@ -259,7 +253,6 @@ export class ActionService {
       updatedAt: row.updatedAt.toISOString(),
     };
   }
-
 
   async retryFailedAction(
     workspaceId: string,

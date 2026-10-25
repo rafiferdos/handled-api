@@ -14,14 +14,12 @@ import { AppException } from '../../common/errors/app.exception.js';
 import { ActionService } from './action.service.js';
 import { ActionExecutionResponseDto } from './dto/action-execution-response.dto.js';
 
-
 @ApiTags('Actions')
 @ApiBearerAuth()
 @UseGuards(AccessContextGuard)
 @Controller()
 export class ActionController {
   constructor(@Inject(ActionService) private readonly actions: ActionService) {}
-
 
   @Get('workspaces/:workspaceId/tickets/:ticketId/actions')
   @WorkspaceScoped()
@@ -48,7 +46,6 @@ export class ActionController {
     return this.actions.getActionsByTicket(workspaceId, ticketId);
   }
 
- 
   @Get('workspaces/:workspaceId/actions/:actionId')
   @WorkspaceScoped()
   @Roles(WorkspaceRole.ADMIN, WorkspaceRole.AGENT, WorkspaceRole.VIEWER)

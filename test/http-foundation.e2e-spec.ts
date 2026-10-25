@@ -55,7 +55,6 @@ class ItemDto {
   id: string;
 }
 
-
 @Controller('foundation-fixture')
 class FoundationFixtureController {
   @Public()

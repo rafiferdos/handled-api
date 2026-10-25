@@ -4,7 +4,6 @@ import {
   ActionType,
 } from '../../../generated/prisma/client.js';
 
-
 export class ActionExecutionResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -50,7 +49,6 @@ export class ActionExecutionResponseDto {
 
   @ApiPropertyOptional({ type: 'string', format: 'date-time', nullable: true })
   finishedAt!: string | null;
-
 
   @ApiPropertyOptional({ type: 'string', nullable: true, maxLength: 64 })
   lastErrorCode!: string | null;

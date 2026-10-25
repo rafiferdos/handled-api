@@ -10,7 +10,6 @@ import {
 } from 'class-validator';
 import { ActionType } from '../../../generated/prisma/client.js';
 
-
 export class QueueActionDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
