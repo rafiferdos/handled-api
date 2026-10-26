@@ -15,8 +15,8 @@ model ActionExecution {
   workspaceId String @db.Uuid
 
   // Wire-aligned enums. Values must match src/common/contracts/domain.enums.ts.
-  actionType  ActionType
-  status      ActionExecutionStatus @default(QUEUED)
+  actionType ActionType
+  status     ActionExecutionStatus @default(QUEUED)
 
   // Stable, tenant-scoped identifiers used to make admission + effect idempotent.
   // businessEffectKey is the "do this business mutation exactly once" guard.
@@ -44,7 +44,7 @@ model ActionExecution {
   // Detailed provider/SDK messages must never be persisted.
   resultCode    String?
   resultMessage String?
-  attempt       Int      @default(0)
+  attempt       Int     @default(0)
   // Simulated effect snapshots for ADR-004 / ADR-005 audit trails. Only
   // updated on a successful state transition so a partial/failed run keeps
   // the column null and clients can tell the difference from "no change".
@@ -52,8 +52,8 @@ model ActionExecution {
   // to Person B; this column stores the projection we *would* have written so
   // the audit reader can replay the simulated effect without crossing
   // ownership seams.
-  beforeState Json?
-  afterState  Json?
+  beforeState   Json?
+  afterState    Json?
 
   // Sanitized short error code captured at the worker boundary. Detailed
   // error messages stay in the structured log, never on the row.
@@ -107,7 +107,7 @@ model AuditEvent {
 
   // Actor. nullable = system action (worker, scheduler). Same-workspace
   // verification happens in the service before the insert runs.
-  actorId String? @db.Uuid
+  actorId String?     @db.Uuid
   source  AuditSource @default(API)
 
   createdAt DateTime @default(now())
@@ -143,11 +143,11 @@ model OutboxEvent {
   // Dispatch bookkeeping. The dispatcher claims a row, then either advances
   // status to SENT, records FAILED + nextAttemptAt, or leaves it PENDING if
   // the worker crashes.
-  attempts       Int       @default(0)
-  nextAttemptAt  DateTime  @default(now())
-  claimedAt      DateTime?
-  lastErrorCode  String?
-  dispatchedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  claimedAt     DateTime?
+  lastErrorCode String?
+  dispatchedAt  DateTime?
 
   // Durable outbox recovery (Person D). Distinct from the realtime emitter
   // path so both can run side-by-side without trampling each other's state.
