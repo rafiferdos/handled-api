@@ -20,6 +20,10 @@ model Workspace {
   websiteUrl           String?          @db.VarChar(2048)
   industry             String?          @db.VarChar(80)
 
+  knowledgeDocument KnowledgeDocument[]
+  knowledgeChunks   KnowledgeChunk[]
+  knowledgeGaps     KnowledgeGap[]
+
   creator     Profile?     @relation("WorkspaceCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   memberships Membership[]
   invites     Invite[]

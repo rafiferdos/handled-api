@@ -24,7 +24,7 @@ model EvaluationRun {
   attempt       Int     @default(0)
   lastErrorCode String?
 
-  queuedAt   DateTime   @default(now())
+  queuedAt   DateTime  @default(now())
   startedAt  DateTime?
   finishedAt DateTime?
 
